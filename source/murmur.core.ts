@@ -2,7 +2,7 @@ import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
 export interface MurmurItf {
     nodeName: string,
-    attr: Attr[]
+    attr: {name,value}[]
     children: Array<Murmur | string>
 }
 
@@ -11,7 +11,7 @@ function isMurmur(obj: Murmur | string): obj is Murmur {
 }
 export default class Murmur implements MurmurItf {
     public nodeName: string
-    public attr: Attr[]
+    public attr: {name,value}[]
     public children: Array<Murmur | string>
     public model: any
     public _connected: Node
@@ -47,11 +47,11 @@ export default class Murmur implements MurmurItf {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
             children = children.map(child => Murmur.convert(child));
-            attr = attr.map(a => {
-                let attrNode = document.createAttribute(a.name);
-                attrNode.value = a.value;
-                return attrNode
-            });
+            // attr = attr.map(a => {
+            //     let attrNode = document.createAttribute(a.name);
+            //     attrNode.value = a.value;
+            //     return attrNode
+            // });
             return new Murmur(nodeName, attr, children);
         } else {
             return obj

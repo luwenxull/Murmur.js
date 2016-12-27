@@ -9,3 +9,7 @@ export let MurmurFieldType={
     ATTR:'ATTR',
     TEXT:'TEXT'
 }
+
+export let MurmurDirectiveTypes=[
+    'mm-repeat','mm-if'
+]

@@ -46,9 +46,10 @@
 
 	let Murmur = __webpack_require__(1);
 	console.log(Murmur);
-	let wxParser = __webpack_require__(7);
-	let root = wxParser.parseStart(`<div class="{position}" data-resourceid="4902196" mm-repeat="a in repeat">
-	<p>{name}</p>is {position} {src}
+	let wxParser = __webpack_require__(8);
+	let root = wxParser.parseStart(`<div class="{position}" data-resourceid="4902196">
+	<p mm-repeat="p in people"></p>
+	<p>is {position} {src}</p>
 	<img src='{src}'/>
 	</div>`);
 
@@ -57,7 +58,7 @@
 	    src: 'http://ggoer.com/favicon.ico',
 	    name: 'luwenxu',
 	    position: 'fe',
-	    repeat: [1, 2]
+	    people: [{ age: 24 }]
 	}));
 	console.log(rootDom);
 	setTimeout(function () {
@@ -128,11 +129,11 @@
 	            children = children.map(function (child) {
 	                return Murmur.convert(child);
 	            });
-	            attr = attr.map(function (a) {
-	                var attrNode = document.createAttribute(a.name);
-	                attrNode.value = a.value;
-	                return attrNode;
-	            });
+	            // attr = attr.map(a => {
+	            //     let attrNode = document.createAttribute(a.name);
+	            //     attrNode.value = a.value;
+	            //     return attrNode
+	            // });
 	            return new Murmur(nodeName, attr, children);
 	        } else {
 	            return obj;
@@ -152,6 +153,7 @@
 	var murmur_field_1 = __webpack_require__(4);
 	var tools = __webpack_require__(5);
 	var murmur_type_1 = __webpack_require__(6);
+	var MurmurDirectives = __webpack_require__(7);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
 	        this.extractValueRegexr = /\{\w+\}/g;
@@ -169,11 +171,18 @@
 	    MurmurCreator.prototype.attachAttr = function (dom, model, murmur) {
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var a = _a[_i];
-	            // let key = this.extractFromModel(a.name, model, murmur, MurmurFieldType.ATTR),
-	            var value = this.extractFromModel(a.value, model, murmur, a, murmur_type_1.MurmurFieldType.ATTR);
-	            // a.name=key;
-	            a.value = value;
-	            dom.setAttributeNode(a);
+	            this.checkMMDirective(a, model, murmur);
+	            var htmlAttr = document.createAttribute(a.name);
+	            htmlAttr.value = this.extractFromModel(a.value, model, murmur, htmlAttr, murmur_type_1.MurmurFieldType.ATTR);
+	            dom.setAttributeNode(htmlAttr);
+	        }
+	    };
+	    MurmurCreator.prototype.checkMMDirective = function (attr, model, murmur) {
+	        var name = attr.name,
+	            value = attr.value;
+	        if (murmur_type_1.MurmurDirectiveTypes.indexOf(name) !== -1) {
+	            var directive = new MurmurDirectives.RepeatDirective(value);
+	            directive.compile(model, murmur);
 	        }
 	    };
 	    MurmurCreator.prototype.appendChildren = function (parent, model, murmur) {
@@ -213,7 +222,7 @@
 	                    var m = matches_1[_i];
 	                    var key = tools.removeBraceOfValue(m),
 	                        value = model[key];
-	                    murmur._fileds[key] = new murmur_field_1.default(value, fieldType, attr || null);
+	                    murmur._fileds[key] = new murmur_field_1.default(value, fieldType, attr);
 	                    newString = val.replace(m, value);
 	                }
 	            }
@@ -266,7 +275,7 @@
 	}
 	exports.isSimpleValue = isSimpleValue;
 	/**
-	 * 去除两侧大括号
+	 * 去除取值表达式两侧大括号
 	 *
 	 * @param {string} str
 	 * @returns {string}
@@ -339,7 +348,8 @@
 	}
 	exports.removeEqualSpace = removeEqualSpace;
 	/**
-	 * 移除多余的空格
+	 * 修正空格个数。
+	 * 将多个相连的空格缩减为一个空格
 	 *
 	 * @param {string} str
 	 * @returns {string}
@@ -348,6 +358,17 @@
 	    return str.replace(/\s{2,}/g, " ");
 	}
 	exports.removeMultiSpace = removeMultiSpace;
+	/**
+	 * 移除所有的空格
+	 *
+	 * @export
+	 * @param {string} str
+	 * @returns {string}
+	 */
+	function removeAllSpace(str) {
+	    return str.replace(/\s*/g, '');
+	}
+	exports.removeAllSpace = removeAllSpace;
 
 /***/ },
 /* 6 */
@@ -365,20 +386,60 @@
 	    ATTR: 'ATTR',
 	    TEXT: 'TEXT'
 	};
+	exports.MurmurDirectiveTypes = ['mm-repeat', 'mm-if'];
 
 /***/ },
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports=__webpack_require__(8)['default']();
+	"use strict";
+
+	var __extends = this && this.__extends || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() {
+	        this.constructor = d;
+	    }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var murmur_tool_1 = __webpack_require__(5);
+	var MurmurDirective = function () {
+	    function MurmurDirective(directiveExpression) {
+	        this.directiveExpression = directiveExpression;
+	    }
+	    return MurmurDirective;
+	}();
+	var RepeatDirective = function (_super) {
+	    __extends(RepeatDirective, _super);
+	    function RepeatDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    RepeatDirective.prototype.compile = function (model, murmur) {
+	        var dExp = this.directiveExpression;
+	        var t = dExp.split('in');
+	        var loopName = murmur_tool_1.removeAllSpace(t[0]),
+	            loopArray = murmur_tool_1.removeAllSpace(t[1]);
+	        for (var a in model[loopArray]) {
+	            console.log(murmur.create(a));
+	        }
+	    };
+	    return RepeatDirective;
+	}(MurmurDirective);
+	exports.RepeatDirective = RepeatDirective;
+	// export let repeat=
 
 /***/ },
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports=__webpack_require__(9)['default']();
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
 	"use strict";
-	var wxParser_tool_1 = __webpack_require__(9);
-	var wxParser_type_1 = __webpack_require__(10);
+	var wxParser_tool_1 = __webpack_require__(10);
+	var wxParser_type_1 = __webpack_require__(11);
 	function isText(obj) {
 	    return obj.type == wxParser_type_1.TEXTNODE;
 	}
@@ -484,7 +545,7 @@
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -522,7 +583,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	"use strict";

@@ -1,7 +1,8 @@
-import Murmur, { MurmurItf } from "./murmur.core"
+import Murmur from "./murmur.core"
 import MurmurField from "./murmur.field"
 import * as tools from "./murmur.tool"
-import { MurmurFieldType, MurmurRegexType } from "./murmur.type"
+import { MurmurFieldType, MurmurRegexType, MurmurDirectiveTypes } from "./murmur.type"
+import * as MurmurDirectives from "./murmur.directive"
 
 class MurmurCreator {
     private extractValueRegexr: RegExp = /\{\w+\}/g
@@ -15,16 +16,22 @@ class MurmurCreator {
             return dom;
         }
     }
-    attachAttr(dom: HTMLElement, model, murmur: Murmur) {
+    attachAttr(dom: HTMLElement, model, murmur: Murmur): void {
         for (let a of murmur.attr) {
-            // let key = this.extractFromModel(a.name, model, murmur, MurmurFieldType.ATTR),
-            let value = this.extractFromModel(a.value, model, murmur, a, MurmurFieldType.ATTR);
-            // a.name=key;
-            a.value = value;
-            dom.setAttributeNode(a);
+            this.checkMMDirective(a, model, murmur);
+            let htmlAttr = document.createAttribute(a.name);
+            htmlAttr.value = this.extractFromModel(a.value, model, murmur, htmlAttr, MurmurFieldType.ATTR);
+            dom.setAttributeNode(htmlAttr);
         }
     }
-    appendChildren(parent: HTMLElement, model, murmur: Murmur) {
+    checkMMDirective(attr: { name, value }, model, murmur) {
+        let name = attr.name, value = attr.value;
+        if (MurmurDirectiveTypes.indexOf(name) !== -1) {
+            let directive = new MurmurDirectives.RepeatDirective(value);
+            directive.compile(model, murmur);
+        }
+    }
+    appendChildren(parent: HTMLElement, model, murmur: Murmur): void {
         for (let child of murmur.children) {
             parent.appendChild((<Murmur>child).create(model))
         }
@@ -46,14 +53,14 @@ class MurmurCreator {
         }
 
     }
-    extractFromModel(val: string, model, murmur: Murmur, attr: Attr = null, fieldType: string = MurmurFieldType.TEXT): string {
+    extractFromModel(val: string, model, murmur: Murmur, attr = null, fieldType: string = MurmurFieldType.TEXT): string {
         let newString = val;
         if (!tools.isNothing(val)) {
             let matches = val.match(this.extractValueRegexr);
             if (matches) {
                 for (let m of matches) {
                     let key = tools.removeBraceOfValue(m), value = model[key];
-                    murmur._fileds[key] = new MurmurField(value, fieldType, attr || null)
+                    murmur._fileds[key] = new MurmurField(value, fieldType, attr)
                     newString = val.replace(m, value);
                 }
             }

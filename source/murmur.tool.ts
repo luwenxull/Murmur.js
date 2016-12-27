@@ -11,7 +11,7 @@ export function isSimpleValue(val) {
 
 
 /**
- * 去除两侧大括号
+ * 去除取值表达式两侧大括号
  * 
  * @param {string} str
  * @returns {string}
@@ -76,11 +76,23 @@ export function removeEqualSpace(str:string):string{
 }
 
 /**
- * 移除多余的空格
+ * 修正空格个数。
+ * 将多个相连的空格缩减为一个空格
  * 
  * @param {string} str
  * @returns {string}
  */
 export function removeMultiSpace(str:string):string{
     return str.replace(/\s{2,}/g," ")
+}
+
+/**
+ * 移除所有的空格
+ * 
+ * @export
+ * @param {string} str
+ * @returns {string}
+ */
+export function removeAllSpace(str:string):string{
+    return str.replace(/\s*/g,'')
 }
