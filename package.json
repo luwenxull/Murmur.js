@@ -1,0 +1,36 @@
+{
+  "name": "murmur",
+  "version": "0.2.0",
+  "description": "么么！一个mvvm框架",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luwenxull/murmur.git"
+  },
+  "keywords": [
+    "mvvm",
+    "virtual",
+    "dom"
+  ],
+  "author": "luwenxull",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/luwenxull/murmur/issues"
+  },
+  "homepage": "https://github.com/luwenxull/murmur#readme",
+  "dependencies": {
+    "wx-parser": "^1.1.0"
+  },
+  "scripts": {
+    "tsc": "tsc --outDir lib -p source",
+    "test": "tsc --outDir lib -p source && webpack --config webpack.test.config.js"
+  },
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.10",
+    "webpack": "^1.14.0"
+  }
+}
