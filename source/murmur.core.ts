@@ -1,6 +1,8 @@
 import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
 import { isNothing, removeAllSpace } from "./murmur.tool"
+import {MurmurDirectiveItf,RepeatDirective} from "./murmur.directive"
+
 export interface MurmurItf {
     nodeName: string,
     attr: { name, value }[]
@@ -15,9 +17,10 @@ export default class Murmur implements MurmurItf {
     public attr: { name, value }[]
     public children: Array<Murmur | string>
     public model: any
-    public repeatMMDState: { inRepeat: boolean, repeatModel } = { inRepeat: false, repeatModel: null }
+    public repeatMMDState: { inRepeat: boolean, repeatModel,repeatDirective:RepeatDirective } = { inRepeat: false, repeatModel: null,repeatDirective:null }
     public _connected: Node
     public _fileds: { [p: string]: MurmurField } = {}
+    public $directives:MurmurDirectiveItf[]=[]
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;

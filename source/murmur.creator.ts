@@ -26,7 +26,9 @@ class MurmurCreator {
         for (let attr of murmur.attr) {
             let {name, value} = attr;
             if (name == 'mm-repeat' && !murmur.repeatMMDState.inRepeat) {
-                let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
+                let directive = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
+                murmur.$directives.push(directive);
+                murmur.repeatMMDState.repeatDirective = directive;
                 return directive.compile(model, murmur, domGenerated)
             }
         }
@@ -34,6 +36,7 @@ class MurmurCreator {
             let {name, value} = attr;
             if (name !== "mm-repeat" && MurmurDirectiveTypesMap[name]) {
                 let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
+                murmur.$directives.push(directive);
                 directive.compile(model, murmur, domGenerated)
             }
         }

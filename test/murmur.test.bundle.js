@@ -66,7 +66,7 @@
 	setTimeout(function () {
 	    rootDom.update({
 	        name: 'daidai',
-	        position: 'be'
+	        location: 'nanjing'
 	    });
 	}, 3000);
 
@@ -90,8 +90,9 @@
 	}
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
-	        this.repeatMMDState = { inRepeat: false, repeatModel: null };
+	        this.repeatMMDState = { inRepeat: false, repeatModel: null, repeatDirective: null };
 	        this._fileds = {};
+	        this.$directives = [];
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -193,6 +194,8 @@
 	                value = attr.value;
 	            if (name_1 == 'mm-repeat' && !murmur.repeatMMDState.inRepeat) {
 	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_1].directive](value);
+	                murmur.$directives.push(directive);
+	                murmur.repeatMMDState.repeatDirective = directive;
 	                return directive.compile(model, murmur, domGenerated);
 	            }
 	        }
@@ -202,6 +205,7 @@
 	                value = attr.value;
 	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypesMap[name_2]) {
 	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_2].directive](value);
+	                murmur.$directives.push(directive);
 	                directive.compile(model, murmur, domGenerated);
 	            }
 	        }
@@ -450,7 +454,9 @@
 	var RepeatDirective = function (_super) {
 	    __extends(RepeatDirective, _super);
 	    function RepeatDirective() {
-	        return _super.apply(this, arguments) || this;
+	        var _this = _super.apply(this, arguments) || this;
+	        _this._connect = [];
+	        return _this;
 	    }
 	    RepeatDirective.prototype.compile = function (model, murmur, domGenerated) {
 	        murmur.repeatMMDState.inRepeat = true;
@@ -460,7 +466,9 @@
 	            for (var _i = 0, _a = model[dExp]; _i < _a.length; _i++) {
 	                var a = _a[_i];
 	                murmur.repeatMMDState.repeatModel = a;
-	                fragment.appendChild(murmur.create(model));
+	                var repeatDom = murmur.create(model);
+	                this._connect.push(repeatDom);
+	                fragment.appendChild(repeatDom);
 	            }
 	        }
 	        murmur.repeatMMDState.inRepeat = false;

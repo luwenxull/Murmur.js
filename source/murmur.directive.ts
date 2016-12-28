@@ -9,6 +9,7 @@ export class MurmurDirective {
 }
 
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
+    public _connect:Node[]=[];
     compile(model, murmur: Murmur, domGenerated: Node): Node {
         murmur.repeatMMDState.inRepeat=true;
         let dExp = this.directiveExpression;
@@ -16,7 +17,9 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
         if (model[dExp]) {
             for (let a of model[dExp]) {
                 murmur.repeatMMDState.repeatModel=a;
-                fragment.appendChild(murmur.create(model))
+                let repeatDom=murmur.create(model)
+                this._connect.push(repeatDom)
+                fragment.appendChild(repeatDom)
             }
         }
         murmur.repeatMMDState.inRepeat=false;

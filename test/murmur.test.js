@@ -20,6 +20,6 @@ console.log(rootDom);
 setTimeout(function () {
     rootDom.update({
         name: 'daidai',
-        position: 'be'
+        location: 'nanjing'
     });
 }, 3000)
