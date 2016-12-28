@@ -15,7 +15,7 @@ export default class Murmur implements MurmurItf {
     public attr: { name, value }[]
     public children: Array<Murmur | string>
     public model: any
-    public controlRepeatMMDState: { inRepeat: boolean, repeatModel } = { inRepeat: false, repeatModel: null }
+    public repeatMMDState: { inRepeat: boolean, repeatModel } = { inRepeat: false, repeatModel: null }
     public _connected: Node
     public _fileds: { [p: string]: MurmurField } = {}
     constructor(tagName, attr, children) {
@@ -46,7 +46,7 @@ export default class Murmur implements MurmurItf {
         }
     }
     extract(field) {
-        let repeatModel = this.controlRepeatMMDState.repeatModel;
+        let repeatModel = this.repeatMMDState.repeatModel;
         if (removeAllSpace(field).indexOf(':') === 0) {
             return repeatModel[field.slice(1)]
         } else {

@@ -10,21 +10,24 @@ class MurmurCreator {
         if (murmur.nodeName === MurmurRegexType.TEXTNODE) {
             return this.createTextNode(murmur, model)
         } else {
-            let dom = document.createElement(murmur.nodeName);
-            this.checkMMDirective(model, murmur, dom);
-
-            this.attachAttr(dom, model, murmur);
-            this.appendChildren(dom, model, murmur);
+            let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
+            let compiledDom = this.checkMMDirective(model, murmur, dom);
+            if (compiledDom) {
+                dom = compiledDom
+            } else {
+                this.attachAttr(<HTMLElement>dom, model, murmur);
+                this.appendChildren(<HTMLElement>dom, model, murmur);
+            }
             return dom;
         }
     }
-    checkMMDirective(model, murmur: Murmur, domGenerated: Node): void {
+    checkMMDirective(model, murmur: Murmur, domGenerated: Node): Node {
+        let fragment: Node = document.createDocumentFragment();
         for (let attr of murmur.attr) {
             let {name, value} = attr;
-            if (name == 'mm-repeat' && !murmur.controlRepeatMMDState.inRepeat) {
+            if (name == 'mm-repeat' && !murmur.repeatMMDState.inRepeat) {
                 let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
-                directive.compile(model, murmur, domGenerated)
-                return 
+                return directive.compile(model, murmur, domGenerated)
             }
         }
         for (let attr of murmur.attr) {
@@ -34,7 +37,7 @@ class MurmurCreator {
                 directive.compile(model, murmur, domGenerated)
             }
         }
-        // return needCompile ? fragment : domGenerated
+        return null
     }
     attachAttr(dom: HTMLElement, model, murmur: Murmur): void {
         for (let a of murmur.attr) {
@@ -45,10 +48,10 @@ class MurmurCreator {
     }
     appendChildren(parent: HTMLElement, model, murmur: Murmur): void {
         for (let child of murmur.children) {
-            child=<Murmur>child;
-            if(murmur.controlRepeatMMDState.inRepeat){
-                child.controlRepeatMMDState.inRepeat=true;
-                child.controlRepeatMMDState.repeatModel=murmur.controlRepeatMMDState.repeatModel
+            child = <Murmur>child;
+            if (murmur.repeatMMDState.inRepeat) {
+                child.repeatMMDState.inRepeat = true;
+                child.repeatMMDState.repeatModel = murmur.repeatMMDState.repeatModel
             }
             parent.appendChild(child.create(model))
         }

@@ -10,23 +10,26 @@ export class MurmurDirective {
 
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: Node): Node {
-        murmur.controlRepeatMMDState.inRepeat = true;
+        murmur.repeatMMDState.inRepeat=true;
         let dExp = this.directiveExpression;
         let fragment = document.createDocumentFragment();
         if (model[dExp]) {
             for (let a of model[dExp]) {
-                murmur.controlRepeatMMDState.repeatModel = a;
+                murmur.repeatMMDState.repeatModel=a;
                 fragment.appendChild(murmur.create(model))
             }
         }
-        murmur.controlRepeatMMDState.inRepeat = false;
+        murmur.repeatMMDState.inRepeat=false;
         return fragment
     }
 }
 
 export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
-    compile(model, murmur: Murmur, domGenerated: Node): Node {
+    compile(model, murmur: Murmur, domGenerated: HTMLElement): Node {
         let dExp = this.directiveExpression;
-        return murmur.extract(dExp) ? domGenerated : document.createDocumentFragment()
+        if(!murmur.extract(dExp)){
+            domGenerated.setAttribute('data-delete','1')
+        }
+        return domGenerated
     }
 }

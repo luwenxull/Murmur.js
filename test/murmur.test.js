@@ -2,7 +2,7 @@ let Murmur = require('../index')
 console.log(Murmur);
 let wxParser = require('wx-parser');
 let root = wxParser.parseStart(`<div class="{className}">
-<p mm-repeat="people" mm-if=":show">{:age} {location}</p>
+<p mm-repeat="people" mm-if=":show" data-name="{name}">{:age} {location}</p>
 <p>is {position} {src}</p>
 <img src='{src}'/>
 </div>`);
