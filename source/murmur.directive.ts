@@ -1,19 +1,32 @@
 import Murmur from "./murmur.core"
 import { removeAllSpace } from "./murmur.tool"
-class MurmurDirective {
+export interface MurmurDirectiveItf {
+    compile(model, murmur: Murmur, domGenerated: Node): Node
+}
+
+export class MurmurDirective {
     constructor(public directiveExpression: string) { }
 }
 
-export class RepeatDirective extends MurmurDirective {
-    compile(model, murmur: Murmur) {
+export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
+    compile(model, murmur: Murmur, domGenerated: Node): Node {
+        murmur.controlRepeatMMDState.inRepeat = true;
         let dExp = this.directiveExpression;
-        let t = dExp.split('in');
-        let loopName = removeAllSpace(t[0]),
-            loopArray = removeAllSpace(t[1]);
-        for (let a in model[loopArray]){
-            console.log( murmur.create(a));
+        let fragment = document.createDocumentFragment();
+        if (model[dExp]) {
+            for (let a of model[dExp]) {
+                murmur.controlRepeatMMDState.repeatModel = a;
+                fragment.appendChild(murmur.create(model))
+            }
         }
+        murmur.controlRepeatMMDState.inRepeat = false;
+        return fragment
     }
 }
 
-// export let repeat=
+export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
+    compile(model, murmur: Murmur, domGenerated: Node): Node {
+        let dExp = this.directiveExpression;
+        return murmur.extract(dExp) ? domGenerated : document.createDocumentFragment()
+    }
+}

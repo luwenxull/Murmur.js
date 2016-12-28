@@ -1,8 +1,9 @@
 import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
+import { isNothing, removeAllSpace } from "./murmur.tool"
 export interface MurmurItf {
     nodeName: string,
-    attr: {name,value}[]
+    attr: { name, value }[]
     children: Array<Murmur | string>
 }
 
@@ -11,11 +12,12 @@ function isMurmur(obj: Murmur | string): obj is Murmur {
 }
 export default class Murmur implements MurmurItf {
     public nodeName: string
-    public attr: {name,value}[]
+    public attr: { name, value }[]
     public children: Array<Murmur | string>
     public model: any
+    public controlRepeatMMDState: { inRepeat: boolean, repeatModel } = { inRepeat: false, repeatModel: null }
     public _connected: Node
-    public _fileds:{[p:string]:MurmurField} = {}
+    public _fileds: { [p: string]: MurmurField } = {}
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;
@@ -29,11 +31,11 @@ export default class Murmur implements MurmurItf {
         let newKeys = Object.keys(updateObj), oldKeys = Object.keys(this._fileds);
         for (let nk of newKeys) {
             if (oldKeys.indexOf(nk) !== -1) {
-                let v = updateObj[nk],field=this._fileds[nk];
-                if(field.attrCatcher){
-                    field.attrCatcher.value=v;
-                }else{
-                    this._connected.textContent=v;
+                let v = updateObj[nk], field = this._fileds[nk];
+                if (field.attrCatcher) {
+                    field.attrCatcher.value = v;
+                } else {
+                    this._connected.textContent = v;
                 }
             }
         }
@@ -41,6 +43,14 @@ export default class Murmur implements MurmurItf {
             if (isMurmur(child)) {
                 child.update(updateObj)
             }
+        }
+    }
+    extract(field) {
+        let repeatModel = this.controlRepeatMMDState.repeatModel;
+        if (removeAllSpace(field).indexOf(':') === 0) {
+            return repeatModel[field.slice(1)]
+        } else {
+            return this.model[field]
         }
     }
     static convert(obj) {

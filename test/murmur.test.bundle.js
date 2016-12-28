@@ -47,8 +47,8 @@
 	let Murmur = __webpack_require__(1);
 	console.log(Murmur);
 	let wxParser = __webpack_require__(8);
-	let root = wxParser.parseStart(`<div class="{position}" data-resourceid="4902196">
-	<p mm-repeat="p in people"></p>
+	let root = wxParser.parseStart(`<div class="{className}">
+	<p mm-repeat="people" mm-if=":show">{:age} {location}</p>
 	<p>is {position} {src}</p>
 	<img src='{src}'/>
 	</div>`);
@@ -57,8 +57,10 @@
 	document.body.appendChild(rootDom.create({
 	    src: 'http://ggoer.com/favicon.ico',
 	    name: 'luwenxu',
+	    className: 'red',
 	    position: 'fe',
-	    people: [{ age: 24 }]
+	    location: "suzhou",
+	    people: [{ age: 24, show: true }, { age: 21 }]
 	}));
 	console.log(rootDom);
 	setTimeout(function () {
@@ -82,11 +84,13 @@
 	"use strict";
 
 	var murmur_creator_1 = __webpack_require__(3);
+	var murmur_tool_1 = __webpack_require__(5);
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
+	        this.controlRepeatMMDState = { inRepeat: false, repeatModel: null };
 	        this._fileds = {};
 	        this.nodeName = tagName;
 	        this.attr = attr;
@@ -119,6 +123,14 @@
 	            if (isMurmur(child)) {
 	                child.update(updateObj);
 	            }
+	        }
+	    };
+	    Murmur.prototype.extract = function (field) {
+	        var repeatModel = this.controlRepeatMMDState.repeatModel;
+	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
+	            return repeatModel[field.slice(1)];
+	        } else {
+	            return this.model[field];
 	        }
 	    };
 	    Murmur.convert = function (obj) {
@@ -156,38 +168,57 @@
 	var MurmurDirectives = __webpack_require__(7);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
-	        this.extractValueRegexr = /\{\w+\}/g;
+	        this.extractValueRegexr = /\{:{0,1}\w+\}/g;
 	    }
 	    MurmurCreator.prototype.create = function (murmur, model) {
 	        if (murmur.nodeName === murmur_type_1.MurmurRegexType.TEXTNODE) {
 	            return this.createTextNode(murmur, model);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
+	            this.checkMMDirective(model, murmur, dom);
 	            this.attachAttr(dom, model, murmur);
 	            this.appendChildren(dom, model, murmur);
 	            return dom;
 	        }
 	    };
+	    MurmurCreator.prototype.checkMMDirective = function (model, murmur, domGenerated) {
+	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
+	            var attr = _a[_i];
+	            var name_1 = attr.name,
+	                value = attr.value;
+	            if (name_1 == 'mm-repeat' && !murmur.controlRepeatMMDState.inRepeat) {
+	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_1].directive](value);
+	                directive.compile(model, murmur, domGenerated);
+	                return;
+	            }
+	        }
+	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
+	            var attr = _c[_b];
+	            var name_2 = attr.name,
+	                value = attr.value;
+	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypesMap[name_2]) {
+	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_2].directive](value);
+	                directive.compile(model, murmur, domGenerated);
+	            }
+	        }
+	        // return needCompile ? fragment : domGenerated
+	    };
 	    MurmurCreator.prototype.attachAttr = function (dom, model, murmur) {
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var a = _a[_i];
-	            this.checkMMDirective(a, model, murmur);
 	            var htmlAttr = document.createAttribute(a.name);
 	            htmlAttr.value = this.extractFromModel(a.value, model, murmur, htmlAttr, murmur_type_1.MurmurFieldType.ATTR);
 	            dom.setAttributeNode(htmlAttr);
 	        }
 	    };
-	    MurmurCreator.prototype.checkMMDirective = function (attr, model, murmur) {
-	        var name = attr.name,
-	            value = attr.value;
-	        if (murmur_type_1.MurmurDirectiveTypes.indexOf(name) !== -1) {
-	            var directive = new MurmurDirectives.RepeatDirective(value);
-	            directive.compile(model, murmur);
-	        }
-	    };
 	    MurmurCreator.prototype.appendChildren = function (parent, model, murmur) {
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
+	            child = child;
+	            if (murmur.controlRepeatMMDState.inRepeat) {
+	                child.controlRepeatMMDState.inRepeat = true;
+	                child.controlRepeatMMDState.repeatModel = murmur.controlRepeatMMDState.repeatModel;
+	            }
 	            parent.appendChild(child.create(model));
 	        }
 	    };
@@ -220,8 +251,8 @@
 	            if (matches) {
 	                for (var _i = 0, matches_1 = matches; _i < matches_1.length; _i++) {
 	                    var m = matches_1[_i];
-	                    var key = tools.removeBraceOfValue(m),
-	                        value = model[key];
+	                    var key = tools.removeBraceOfValue(m);
+	                    var value = murmur.extract(key);
 	                    murmur._fileds[key] = new murmur_field_1.default(value, fieldType, attr);
 	                    newString = val.replace(m, value);
 	                }
@@ -387,10 +418,14 @@
 	    TEXT: 'TEXT'
 	};
 	exports.MurmurDirectiveTypes = ['mm-repeat', 'mm-if'];
+	exports.MurmurDirectiveTypesMap = {
+	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
+	    "mm-if": { name: "mm-if", directive: "IfDirective" }
+	};
 
 /***/ },
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	"use strict";
 
@@ -401,31 +436,47 @@
 	    }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var murmur_tool_1 = __webpack_require__(5);
 	var MurmurDirective = function () {
 	    function MurmurDirective(directiveExpression) {
 	        this.directiveExpression = directiveExpression;
 	    }
 	    return MurmurDirective;
 	}();
+	exports.MurmurDirective = MurmurDirective;
 	var RepeatDirective = function (_super) {
 	    __extends(RepeatDirective, _super);
 	    function RepeatDirective() {
 	        return _super.apply(this, arguments) || this;
 	    }
-	    RepeatDirective.prototype.compile = function (model, murmur) {
+	    RepeatDirective.prototype.compile = function (model, murmur, domGenerated) {
+	        murmur.controlRepeatMMDState.inRepeat = true;
 	        var dExp = this.directiveExpression;
-	        var t = dExp.split('in');
-	        var loopName = murmur_tool_1.removeAllSpace(t[0]),
-	            loopArray = murmur_tool_1.removeAllSpace(t[1]);
-	        for (var a in model[loopArray]) {
-	            console.log(murmur.create(a));
+	        var fragment = document.createDocumentFragment();
+	        if (model[dExp]) {
+	            for (var _i = 0, _a = model[dExp]; _i < _a.length; _i++) {
+	                var a = _a[_i];
+	                murmur.controlRepeatMMDState.repeatModel = a;
+	                fragment.appendChild(murmur.create(model));
+	            }
 	        }
+	        murmur.controlRepeatMMDState.inRepeat = false;
+	        return fragment;
 	    };
 	    return RepeatDirective;
 	}(MurmurDirective);
 	exports.RepeatDirective = RepeatDirective;
-	// export let repeat=
+	var IfDirective = function (_super) {
+	    __extends(IfDirective, _super);
+	    function IfDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    IfDirective.prototype.compile = function (model, murmur, domGenerated) {
+	        var dExp = this.directiveExpression;
+	        return murmur.extract(dExp) ? domGenerated : document.createDocumentFragment();
+	    };
+	    return IfDirective;
+	}(MurmurDirective);
+	exports.IfDirective = IfDirective;
 
 /***/ },
 /* 8 */
