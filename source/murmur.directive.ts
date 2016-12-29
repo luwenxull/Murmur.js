@@ -1,5 +1,5 @@
 import Murmur from "./murmur.core"
-import { removeAllSpace } from "./murmur.tool"
+import { removeAllSpace,addSibling } from "./murmur.tool"
 import Connect from "./murmur.connect"
 
 export interface MurmurDirectiveItf {
@@ -35,7 +35,9 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
     update(murmur: Murmur, updateData) {
         let repeatArr = updateData[this.directiveExpression]
         if (repeatArr) {
-            for (let i = 0; i < repeatArr.length; i++) {
+            let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
+            this.lengthCheck(repeatArr, murmur)
+            for (let i = 0; i < repeatArrLength; i++) {
                 let repeatObj = repeatArr[i];
                 let m = this.murmurList[i];
                 if (m) {
@@ -45,9 +47,33 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 }
             }
         }
-        // for(let m of this.murmurList){
-        //     m.dispatchUpdate(updateData)
-        // }
+    }
+    lengthCheck(repeatArr: Array<any>, murmur: Murmur) {
+        let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
+        if (mmListLength > repeatArrLength) {
+            this.removeExcessMurmur(mmListLength, repeatArrLength)
+        }
+        if (mmListLength < repeatArrLength) {
+            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength)
+        }
+    }
+    removeExcessMurmur(mmListLength: number, repeatArrLength: number) {
+        while (repeatArrLength < mmListLength) {
+            (<HTMLElement>this.murmurList[--mmListLength]._connected.get()).remove()
+            this.murmurList.pop();
+        }
+    }
+    addExtraMurmur(repeatArr: any[], murmur: Murmur, mmListLength, repeatArrLength) {
+        while (mmListLength < repeatArrLength) {
+            let clone = Murmur.clone(murmur),newDom,lastDom
+            clone.$repeatDirective.$repeatEntrance = false;
+            clone.$repeatDirective.$repeatEntity = true;
+            clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
+            newDom=clone.create(murmur.model);
+            lastDom=this.murmurList[mmListLength-2]._connected.get();
+            addSibling(lastDom,newDom);
+            this.murmurList.push(clone);
+        }
     }
 }
 

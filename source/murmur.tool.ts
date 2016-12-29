@@ -96,3 +96,20 @@ export function removeMultiSpace(str:string):string{
 export function removeAllSpace(str:string):string{
     return str.replace(/\s*/g,'')
 }
+
+/**
+ * 在当前节点的后面添加兄弟节点
+ * 
+ * @export
+ * @param {Node} node 当前节点
+ * @param {Node} refrenceNode 待添加节点
+ */
+export function addSibling(node:Node,refrenceNode:Node):void{
+    let parentNode=node.parentNode;
+    let nextSibling=node.nextSibling;
+    if(nextSibling){
+        parentNode.insertBefore(refrenceNode,nextSibling)
+    }else{
+        parentNode.appendChild(refrenceNode)
+    }
+}

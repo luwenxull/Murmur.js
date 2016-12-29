@@ -51,7 +51,7 @@
 	<p mm-repeat="people" mm-if=":show" data-name="{name}">{:age} {location}</p>
 	<p>{name} is {position}</p>
 	<img src='{src}'/>
-	</div>`);
+	</div>`, /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+\})/g);
 
 	let rootDom = Murmur.convert(root);
 	document.body.appendChild(rootDom.create({
@@ -60,7 +60,7 @@
 	    className: 'red',
 	    position: 'fe',
 	    location: "suzhou",
-	    people: [{ age: 24, show: true }, { age: 21 }]
+	    people: [{ age: 24, show: true }]
 	}));
 	console.log(rootDom);
 	setTimeout(function () {
@@ -68,7 +68,7 @@
 	        name: 'daidai',
 	        position: 'nurse',
 	        location: 'nanjing',
-	        people: [{ age: 25 }]
+	        people: [{ age: 25 }, { age: 21 }]
 	    });
 	}, 3000);
 
@@ -437,6 +437,23 @@
 	    return str.replace(/\s*/g, '');
 	}
 	exports.removeAllSpace = removeAllSpace;
+	/**
+	 * 在当前节点的后面添加兄弟节点
+	 *
+	 * @export
+	 * @param {Node} node 当前节点
+	 * @param {Node} refrenceNode 待添加节点
+	 */
+	function addSibling(node, refrenceNode) {
+	    var parentNode = node.parentNode;
+	    var nextSibling = node.nextSibling;
+	    if (nextSibling) {
+	        parentNode.insertBefore(refrenceNode, nextSibling);
+	    } else {
+	        parentNode.appendChild(refrenceNode);
+	    }
+	}
+	exports.addSibling = addSibling;
 
 /***/ },
 /* 6 */
@@ -479,6 +496,7 @@
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	var murmur_core_1 = __webpack_require__(2);
+	var murmur_tool_1 = __webpack_require__(5);
 	var MurmurDirective = function () {
 	    function MurmurDirective(directiveExpression) {
 	        this.directiveExpression = directiveExpression;
@@ -516,7 +534,10 @@
 	    RepeatDirective.prototype.update = function (murmur, updateData) {
 	        var repeatArr = updateData[this.directiveExpression];
 	        if (repeatArr) {
-	            for (var i = 0; i < repeatArr.length; i++) {
+	            var repeatArrLength = repeatArr.length,
+	                mmListLength = this.murmurList.length;
+	            this.lengthCheck(repeatArr, murmur);
+	            for (var i = 0; i < repeatArrLength; i++) {
 	                var repeatObj = repeatArr[i];
 	                var m = this.murmurList[i];
 	                if (m) {
@@ -526,9 +547,36 @@
 	                }
 	            }
 	        }
-	        // for(let m of this.murmurList){
-	        //     m.dispatchUpdate(updateData)
-	        // }
+	    };
+	    RepeatDirective.prototype.lengthCheck = function (repeatArr, murmur) {
+	        var repeatArrLength = repeatArr.length,
+	            mmListLength = this.murmurList.length;
+	        if (mmListLength > repeatArrLength) {
+	            this.removeExcessMurmur(mmListLength, repeatArrLength);
+	        }
+	        if (mmListLength < repeatArrLength) {
+	            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength);
+	        }
+	    };
+	    RepeatDirective.prototype.removeExcessMurmur = function (mmListLength, repeatArrLength) {
+	        while (repeatArrLength < mmListLength) {
+	            this.murmurList[--mmListLength]._connected.get().remove();
+	            this.murmurList.pop();
+	        }
+	    };
+	    RepeatDirective.prototype.addExtraMurmur = function (repeatArr, murmur, mmListLength, repeatArrLength) {
+	        while (mmListLength < repeatArrLength) {
+	            var clone = murmur_core_1.default.clone(murmur),
+	                newDom = void 0,
+	                lastDom = void 0;
+	            clone.$repeatDirective.$repeatEntrance = false;
+	            clone.$repeatDirective.$repeatEntity = true;
+	            clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
+	            newDom = clone.create(murmur.model);
+	            lastDom = this.murmurList[mmListLength - 2]._connected.get();
+	            murmur_tool_1.addSibling(lastDom, newDom);
+	            this.murmurList.push(clone);
+	        }
 	    };
 	    return RepeatDirective;
 	}(MurmurDirective);
@@ -591,17 +639,19 @@
 	}
 	var WxDomParser = (function () {
 	    function WxDomParser() {
-	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{\w+\})/g;
+	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>/g;
 	        this.attrRegex = /[\w\-]+=['"][\s\S]*?['"]/g;
 	    }
-	    WxDomParser.prototype.parseStart = function (htmlStr) {
-	        var matchResult = this.findAllNodes(htmlStr);
+	    WxDomParser.prototype.parseStart = function (htmlStr, optionRegex) {
+	        if (optionRegex === void 0) { optionRegex = this.nodeRegex; }
+	        var matchResult = this.findAllNodes(htmlStr, optionRegex);
 	        return this.makeWxTree(matchResult);
 	    };
-	    WxDomParser.prototype.findAllNodes = function (htmlStr) {
+	    WxDomParser.prototype.findAllNodes = function (htmlStr, optionRegex) {
+	        if (optionRegex === void 0) { optionRegex = this.nodeRegex; }
 	        var result;
 	        var allMatches = [], nextIndex = 0;
-	        while (result = this.nodeRegex.exec(htmlStr)) {
+	        while (result = optionRegex.exec(htmlStr)) {
 	            var match = result[0], startTag = result[1], startTagName = result[2], attr = result[3], endSelf = result[4], endTagName = result[5], exp = result[6];
 	            var index = result.index, length_1 = match.length;
 	            if (index > nextIndex) {
@@ -644,9 +694,7 @@
 	    WxDomParser.prototype.make = function (result, openTreeList) {
 	        var tree = openTreeList[openTreeList.length - 1];
 	        if (isText(result)) {
-	            if (wxParser_tool_1.removeAllSpace(result.value).length !== 0) {
-	                tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
-	            }
+	            tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
 	        }
 	        else {
 	            if (result.endTagName) {
