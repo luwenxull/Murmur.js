@@ -63,6 +63,7 @@
 	    people: [{ age: 24, show: true }, { age: 21 }]
 	}));
 	console.log(rootDom);
+	Murmur.clone(rootDom);
 	setTimeout(function () {
 	    rootDom.update({
 	        name: 'daidai',
@@ -142,14 +143,22 @@
 	            children = children.map(function (child) {
 	                return Murmur.convert(child);
 	            });
-	            // attr = attr.map(a => {
-	            //     let attrNode = document.createAttribute(a.name);
-	            //     attrNode.value = a.value;
-	            //     return attrNode
-	            // });
 	            return new Murmur(nodeName, attr, children);
 	        } else {
 	            return obj;
+	        }
+	    };
+	    Murmur.clone = function (murmur) {
+	        if (isMurmur(murmur)) {
+	            var nodeName = murmur.nodeName,
+	                attr = murmur.attr,
+	                children = murmur.children;
+	            children = children.map(function (child) {
+	                return Murmur.clone(child);
+	            });
+	            return new Murmur(nodeName, attr, children);
+	        } else {
+	            return murmur;
 	        }
 	    };
 	    return Murmur;

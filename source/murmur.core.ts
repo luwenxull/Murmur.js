@@ -60,14 +60,18 @@ export default class Murmur implements MurmurItf {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
             children = children.map(child => Murmur.convert(child));
-            // attr = attr.map(a => {
-            //     let attrNode = document.createAttribute(a.name);
-            //     attrNode.value = a.value;
-            //     return attrNode
-            // });
             return new Murmur(nodeName, attr, children);
         } else {
             return obj
+        }
+    }
+    static clone(murmur:Murmur|string){
+        if (isMurmur(murmur)) {
+            let {nodeName, attr, children} = murmur;
+            children = children.map(child => Murmur.clone(child));
+            return new Murmur(nodeName, attr, children);
+        } else {
+            return murmur
         }
     }
 }

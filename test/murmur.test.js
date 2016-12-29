@@ -17,6 +17,7 @@ document.body.appendChild(rootDom.create({
     people: [{age:24,show:true},{age:21}]
 }));
 console.log(rootDom);
+Murmur.clone(rootDom);
 setTimeout(function () {
     rootDom.update({
         name: 'daidai',
