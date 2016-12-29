@@ -64,10 +64,11 @@
 	}));
 	console.log(rootDom);
 	setTimeout(function () {
-	    rootDom.dispatchUpdate({
+	    rootDom.update({
 	        name: 'daidai',
 	        position: 'nurse',
-	        location: 'nanjing'
+	        location: 'nanjing',
+	        people: [{ age: 25 }]
 	    });
 	}, 3000);
 
@@ -93,7 +94,7 @@
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
-	        this._fileds = {};
+	        this._fields = {};
 	        this.$directives = [];
 	        this.nodeName = tagName;
 	        this.attr = attr;
@@ -110,7 +111,7 @@
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj) {
 	        if (this._connected.isSimpleDom()) {
-	            this.directlyUpdate(updateObj);
+	            this.doUpdate(updateObj);
 	            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
 	                var child = _a[_i];
 	                if (isMurmur(child)) {
@@ -118,24 +119,24 @@
 	                }
 	            }
 	        } else {
-	            this.$repeatDirective.repeatDInstance.update(this);
+	            this.$repeatDirective.repeatDInstance.update(this, updateObj);
 	        }
 	    };
-	    Murmur.prototype.directlyUpdate = function (updateObj) {
-	        var newKeys = Object.keys(updateObj),
-	            oldKeys = Object.keys(this._fileds);
-	        for (var _i = 0, newKeys_1 = newKeys; _i < newKeys_1.length; _i++) {
-	            var nk = newKeys_1[_i];
-	            if (oldKeys.indexOf(nk) !== -1) {
-	                var v = updateObj[nk],
-	                    field = this._fileds[nk];
-	                if (field.attrCatcher) {
-	                    field.attrCatcher.value = v;
-	                } else {
-	                    this._connected.get().textContent = v;
-	                }
+	    Murmur.prototype.doUpdate = function (updateObj) {
+	        var fieldKeys = Object.keys(this._fields);
+	        for (var _i = 0, fieldKeys_1 = fieldKeys; _i < fieldKeys_1.length; _i++) {
+	            var field = fieldKeys_1[_i];
+	            var newVal = this.extract(field);
+	            if (this._fields[field].attrCatcher) {
+	                this._fields[field].attrCatcher.value = newVal;
+	            } else {
+	                this._connected.get().textContent = newVal;
 	            }
 	        }
+	    };
+	    Murmur.prototype.update = function (updateObj) {
+	        Object.assign(this.model, updateObj);
+	        this.dispatchUpdate(updateObj);
 	    };
 	    Murmur.prototype.extract = function (field) {
 	        var repeatModel = this.$repeatDirective.repeatModel;
@@ -143,6 +144,15 @@
 	            return repeatModel[field.slice(1)];
 	        } else {
 	            return this.model[field];
+	        }
+	    };
+	    Murmur.prototype.replaceRepeatModelOfChild = function (newModel) {
+	        for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+	            var child = _a[_i];
+	            if (isMurmur(child)) {
+	                child.$repeatDirective.repeatModel = newModel;
+	                child.replaceRepeatModelOfChild(newModel);
+	            }
 	        }
 	    };
 	    Murmur.convert = function (obj) {
@@ -280,7 +290,7 @@
 	                    var m = matches_1[_i];
 	                    var key = tools.removeBraceOfValue(m);
 	                    var value = murmur.extract(key);
-	                    murmur._fileds[key] = new murmur_field_1.default(value, fieldType, attr);
+	                    murmur._fields[key] = new murmur_field_1.default(value, fieldType, attr);
 	                    newString = val.replace(m, value);
 	                }
 	            }
@@ -503,8 +513,22 @@
 	        // murmur.$repeatDirective.inRepeat=false;
 	        return fragment;
 	    };
-	    RepeatDirective.prototype.update = function (murmur) {
-	        console.log(murmur);
+	    RepeatDirective.prototype.update = function (murmur, updateData) {
+	        var repeatArr = updateData[this.directiveExpression];
+	        if (repeatArr) {
+	            for (var i = 0; i < repeatArr.length; i++) {
+	                var repeatObj = repeatArr[i];
+	                var m = this.murmurList[i];
+	                if (m) {
+	                    m.$repeatDirective.repeatModel = repeatObj;
+	                    m.replaceRepeatModelOfChild(repeatObj);
+	                    m.dispatchUpdate(updateData);
+	                }
+	            }
+	        }
+	        // for(let m of this.murmurList){
+	        //     m.dispatchUpdate(updateData)
+	        // }
 	    };
 	    return RepeatDirective;
 	}(MurmurDirective);

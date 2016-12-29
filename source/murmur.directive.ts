@@ -4,7 +4,7 @@ import Connect from "./murmur.connect"
 
 export interface MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: Node): Node
-    update(murmur:Murmur)
+    update(murmur: Murmur, updateData)
 }
 
 export class MurmurDirective {
@@ -23,7 +23,6 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 clone.$repeatDirective.$repeatEntrance = false;
                 clone.$repeatDirective.$repeatEntity = true;
                 clone.$repeatDirective.repeatModel = a;
-
                 this.murmurList.push(clone);
                 // clone.$repeatDirective=murmur.$repeatDirective;
                 let repeatDom = clone.create(model);
@@ -33,8 +32,22 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
         // murmur.$repeatDirective.inRepeat=false;
         return fragment
     }
-    update(murmur:Murmur) {
-        console.log(murmur);
+    update(murmur: Murmur, updateData) {
+        let repeatArr = updateData[this.directiveExpression]
+        if (repeatArr) {
+            for (let i = 0; i < repeatArr.length; i++) {
+                let repeatObj = repeatArr[i];
+                let m = this.murmurList[i];
+                if (m) {
+                    m.$repeatDirective.repeatModel = repeatObj;
+                    m.replaceRepeatModelOfChild(repeatObj);
+                    m.dispatchUpdate(updateData)
+                }
+            }
+        }
+        // for(let m of this.murmurList){
+        //     m.dispatchUpdate(updateData)
+        // }
     }
 }
 

@@ -84,7 +84,7 @@ class MurmurCreator {
                 for (let m of matches) {
                     let key = tools.removeBraceOfValue(m);
                     let value = murmur.extract(key);
-                    murmur._fileds[key] = new MurmurField(value, fieldType, attr)
+                    murmur._fields[key] = new MurmurField(value, fieldType, attr)
                     newString = val.replace(m, value);
                 }
             }

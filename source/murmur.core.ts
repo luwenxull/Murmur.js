@@ -9,7 +9,7 @@ export interface MurmurItf {
     attr: { name, value }[]
     children: Array<Murmur | string>
 }
-let murmurID=1;
+let murmurID = 1;
 
 function isMurmur(obj: Murmur | string): obj is Murmur {
     return obj instanceof Murmur
@@ -21,14 +21,14 @@ export default class Murmur implements MurmurItf {
     public model: any
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }
     public _connected: Connect
-    public _fileds: { [p: string]: MurmurField } = {}
+    public _fields: { [p: string]: MurmurField } = {}
     public $directives: MurmurDirectiveItf[] = []
-    public murmurID:number
+    public murmurID: number
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;
         this.children = children;
-        this.murmurID=murmurID++;
+        this.murmurID = murmurID++;
     }
     create(model = null): Node {
         this.model = model;
@@ -37,28 +37,30 @@ export default class Murmur implements MurmurItf {
     }
     dispatchUpdate(updateObj) {
         if (this._connected.isSimpleDom()) {
-            this.directlyUpdate(updateObj)
+            this.doUpdate(updateObj)
             for (let child of this.children) {
                 if (isMurmur(child)) {
                     child.dispatchUpdate(updateObj)
                 }
             }
         } else {
-            this.$repeatDirective.repeatDInstance.update(this)
+            this.$repeatDirective.repeatDInstance.update(this, updateObj)
         }
     }
-    directlyUpdate(updateObj){
-        let newKeys = Object.keys(updateObj), oldKeys = Object.keys(this._fileds);
-        for (let nk of newKeys) {
-            if (oldKeys.indexOf(nk) !== -1) {
-                let v = updateObj[nk], field = this._fileds[nk];
-                if (field.attrCatcher) {
-                    field.attrCatcher.value = v;
-                } else {
-                    this._connected.get().textContent = v;
-                }
+    doUpdate(updateObj) {
+        let fieldKeys = Object.keys(this._fields);
+        for (let field of fieldKeys) {
+            let newVal = this.extract(field);
+            if (this._fields[field].attrCatcher) {
+                this._fields[field].attrCatcher.value = newVal;
+            } else {
+                this._connected.get().textContent = newVal;
             }
         }
+    }
+    update(updateObj){
+        Object.assign(this.model, updateObj);
+        this.dispatchUpdate(updateObj);
     }
     extract(field) {
         let repeatModel = this.$repeatDirective.repeatModel;
@@ -66,6 +68,14 @@ export default class Murmur implements MurmurItf {
             return repeatModel[field.slice(1)]
         } else {
             return this.model[field]
+        }
+    }
+    replaceRepeatModelOfChild(newModel){
+        for(let child of this.children){
+            if(isMurmur(child)){
+                child.$repeatDirective.repeatModel=newModel;
+                child.replaceRepeatModelOfChild(newModel);
+            }
         }
     }
     static convert(obj) {

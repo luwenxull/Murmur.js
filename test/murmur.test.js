@@ -18,9 +18,10 @@ document.body.appendChild(rootDom.create({
 }));
 console.log(rootDom);
 setTimeout(function () {
-    rootDom.dispatchUpdate({
+    rootDom.update({
         name: 'daidai',
         position:'nurse',
-        location: 'nanjing'
+        location: 'nanjing',
+        people:[{age:25}]
     });
 }, 3000)
