@@ -3,11 +3,20 @@ import MurmurField from "./murmur.field"
 import { isNothing, removeAllSpace } from "./murmur.tool"
 import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
+import { wxParser } from "wx-parser"
+
+import "whatwg-fetch"
 
 export interface MurmurItf {
     nodeName: string,
     attr: { name, value }[]
     children: Array<Murmur | string>
+}
+
+interface renderItf {
+    model,
+    template: string,
+    templateUrl: string
 }
 let murmurID = 1;
 
@@ -58,7 +67,7 @@ export default class Murmur implements MurmurItf {
             }
         }
     }
-    update(updateObj){
+    update(updateObj) {
         Object.assign(this.model, updateObj);
         this.dispatchUpdate(updateObj);
     }
@@ -70,15 +79,15 @@ export default class Murmur implements MurmurItf {
             return this.model[field]
         }
     }
-    replaceRepeatModelOfChild(newModel){
-        for(let child of this.children){
-            if(isMurmur(child)){
-                child.$repeatDirective.repeatModel=newModel;
+    replaceRepeatModelOfChild(newModel) {
+        for (let child of this.children) {
+            if (isMurmur(child)) {
+                child.$repeatDirective.repeatModel = newModel;
                 child.replaceRepeatModelOfChild(newModel);
             }
         }
     }
-    static convert(obj) {
+    static convert(obj): Murmur {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
             children = children.map(child => Murmur.convert(child));
@@ -95,5 +104,24 @@ export default class Murmur implements MurmurItf {
         } else {
             return murmur
         }
+    }
+    static render(renderObj: renderItf) {
+        let root, murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+\})/g;
+        let finalTemplate;
+        if (renderObj.template) {
+            finalTemplate=renderObj.template;
+            Murmur.append(finalTemplate,renderObj.model)
+        } else if (renderObj.templateUrl) {
+            fetch(renderObj.templateUrl).then(function (response) {
+                return response.text()
+            }).then(function (body) {
+                finalTemplate=body;
+                Murmur.append(finalTemplate,renderObj.model)
+            })
+        }
+    }
+    static append(template,model){
+        let murmurRoot=Murmur.convert(wxParser.parseStart(template)).create(model);
+        console.log(murmurRoot);
     }
 }

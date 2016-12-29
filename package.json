@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/luwenxull/murmur#readme",
   "dependencies": {
+    "whatwg-fetch": "^2.0.1",
     "wx-parser": "^1.1.0"
   },
   "scripts": {
