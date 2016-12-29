@@ -3,7 +3,7 @@ console.log(Murmur);
 let wxParser = require('wx-parser');
 let root = wxParser.parseStart(`<div class="{className}">
 <p mm-repeat="people" mm-if=":show" data-name="{name}">{:age} {location}</p>
-<p>is {position} {src}</p>
+<p>{name} is {position}</p>
 <img src='{src}'/>
 </div>`);
 
@@ -17,10 +17,10 @@ document.body.appendChild(rootDom.create({
     people: [{age:24,show:true},{age:21}]
 }));
 console.log(rootDom);
-Murmur.clone(rootDom);
 setTimeout(function () {
-    rootDom.update({
+    rootDom.dispatchUpdate({
         name: 'daidai',
+        position:'nurse',
         location: 'nanjing'
     });
 }, 3000)

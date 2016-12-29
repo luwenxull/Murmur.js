@@ -1,7 +1,10 @@
 import Murmur from "./murmur.core"
 import { removeAllSpace } from "./murmur.tool"
+import Connect from "./murmur.connect"
+
 export interface MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: Node): Node
+    update(murmur:Murmur)
 }
 
 export class MurmurDirective {
@@ -9,30 +12,41 @@ export class MurmurDirective {
 }
 
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
-    public _connect:Node[]=[];
+    public murmurList: Murmur[] = [];
     compile(model, murmur: Murmur, domGenerated: Node): Node {
-        murmur.repeatMMDState.inRepeat=true;
+        // murmur.$repeatDirective.inRepeat=true;
         let dExp = this.directiveExpression;
         let fragment = document.createDocumentFragment();
         if (model[dExp]) {
             for (let a of model[dExp]) {
-                murmur.repeatMMDState.repeatModel=a;
-                let repeatDom=murmur.create(model)
-                this._connect.push(repeatDom)
+                let clone = Murmur.clone(murmur);
+                clone.$repeatDirective.$repeatEntrance = false;
+                clone.$repeatDirective.$repeatEntity = true;
+                clone.$repeatDirective.repeatModel = a;
+
+                this.murmurList.push(clone);
+                // clone.$repeatDirective=murmur.$repeatDirective;
+                let repeatDom = clone.create(model);
                 fragment.appendChild(repeatDom)
             }
         }
-        murmur.repeatMMDState.inRepeat=false;
+        // murmur.$repeatDirective.inRepeat=false;
         return fragment
+    }
+    update(murmur:Murmur) {
+        console.log(murmur);
     }
 }
 
 export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: HTMLElement): Node {
         let dExp = this.directiveExpression;
-        if(!murmur.extract(dExp)){
-            domGenerated.setAttribute('data-delete','1')
+        if (!murmur.extract(dExp)) {
+            domGenerated.setAttribute('data-delete', '1')
         }
         return domGenerated
+    }
+    update() {
+
     }
 }

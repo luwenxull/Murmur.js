@@ -18,3 +18,5 @@ export let MurmurDirectiveTypesMap={
     "mm-repeat":{name:"mm-repeat",directive:"RepeatDirective"},
     "mm-if":{name:"mm-if",directive:"IfDirective"}
 }
+
+export enum MurmurConnectTypes {DOM,DIRECTIVE}

@@ -46,10 +46,10 @@
 
 	let Murmur = __webpack_require__(1);
 	console.log(Murmur);
-	let wxParser = __webpack_require__(8);
+	let wxParser = __webpack_require__(9);
 	let root = wxParser.parseStart(`<div class="{className}">
 	<p mm-repeat="people" mm-if=":show" data-name="{name}">{:age} {location}</p>
-	<p>is {position} {src}</p>
+	<p>{name} is {position}</p>
 	<img src='{src}'/>
 	</div>`);
 
@@ -63,10 +63,10 @@
 	    people: [{ age: 24, show: true }, { age: 21 }]
 	}));
 	console.log(rootDom);
-	Murmur.clone(rootDom);
 	setTimeout(function () {
-	    rootDom.update({
+	    rootDom.dispatchUpdate({
 	        name: 'daidai',
+	        position: 'nurse',
 	        location: 'nanjing'
 	    });
 	}, 3000);
@@ -86,26 +86,42 @@
 
 	var murmur_creator_1 = __webpack_require__(3);
 	var murmur_tool_1 = __webpack_require__(5);
+	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
-	        this.repeatMMDState = { inRepeat: false, repeatModel: null, repeatDirective: null };
+	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
 	        this._fileds = {};
 	        this.$directives = [];
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
+	        this.murmurID = murmurID++;
 	    }
 	    Murmur.prototype.create = function (model) {
 	        if (model === void 0) {
 	            model = null;
 	        }
 	        this.model = model;
-	        return this._connected = murmur_creator_1.default().create(this, model);
+	        this._connected = murmur_creator_1.default().create(this, model);
+	        return this._connected.dom;
 	    };
-	    Murmur.prototype.update = function (updateObj) {
+	    Murmur.prototype.dispatchUpdate = function (updateObj) {
+	        if (this._connected.isSimpleDom()) {
+	            this.directlyUpdate(updateObj);
+	            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+	                var child = _a[_i];
+	                if (isMurmur(child)) {
+	                    child.dispatchUpdate(updateObj);
+	                }
+	            }
+	        } else {
+	            this.$repeatDirective.repeatDInstance.update(this);
+	        }
+	    };
+	    Murmur.prototype.directlyUpdate = function (updateObj) {
 	        var newKeys = Object.keys(updateObj),
 	            oldKeys = Object.keys(this._fileds);
 	        for (var _i = 0, newKeys_1 = newKeys; _i < newKeys_1.length; _i++) {
@@ -116,19 +132,13 @@
 	                if (field.attrCatcher) {
 	                    field.attrCatcher.value = v;
 	                } else {
-	                    this._connected.textContent = v;
+	                    this._connected.get().textContent = v;
 	                }
-	            }
-	        }
-	        for (var _a = 0, _b = this.children; _a < _b.length; _a++) {
-	            var child = _b[_a];
-	            if (isMurmur(child)) {
-	                child.update(updateObj);
 	            }
 	        }
 	    };
 	    Murmur.prototype.extract = function (field) {
-	        var repeatModel = this.repeatMMDState.repeatModel;
+	        var repeatModel = this.$repeatDirective.repeatModel;
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
 	            return repeatModel[field.slice(1)];
 	        } else {
@@ -149,7 +159,7 @@
 	        }
 	    };
 	    Murmur.clone = function (murmur) {
-	        if (isMurmur(murmur)) {
+	        if (murmur.nodeName) {
 	            var nodeName = murmur.nodeName,
 	                attr = murmur.attr,
 	                children = murmur.children;
@@ -176,24 +186,27 @@
 	var tools = __webpack_require__(5);
 	var murmur_type_1 = __webpack_require__(6);
 	var MurmurDirectives = __webpack_require__(7);
+	var murmur_connect_1 = __webpack_require__(8);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
 	        this.extractValueRegexr = /\{:{0,1}\w+\}/g;
 	    }
 	    MurmurCreator.prototype.create = function (murmur, model) {
+	        var connect;
 	        if (murmur.nodeName === murmur_type_1.MurmurRegexType.TEXTNODE) {
-	            return this.createTextNode(murmur, model);
+	            connect = new murmur_connect_1.default(this.createTextNode(murmur, model), murmur_type_1.MurmurConnectTypes[0]);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
 	            var compiledDom = this.checkMMDirective(model, murmur, dom);
 	            if (compiledDom) {
-	                dom = compiledDom;
+	                connect = new murmur_connect_1.default(compiledDom, murmur_type_1.MurmurConnectTypes[1]);
 	            } else {
 	                this.attachAttr(dom, model, murmur);
 	                this.appendChildren(dom, model, murmur);
+	                connect = new murmur_connect_1.default(dom, murmur_type_1.MurmurConnectTypes[0]);
 	            }
-	            return dom;
 	        }
+	        return connect;
 	    };
 	    MurmurCreator.prototype.checkMMDirective = function (model, murmur, domGenerated) {
 	        var fragment = document.createDocumentFragment();
@@ -201,10 +214,10 @@
 	            var attr = _a[_i];
 	            var name_1 = attr.name,
 	                value = attr.value;
-	            if (name_1 == 'mm-repeat' && !murmur.repeatMMDState.inRepeat) {
+	            if (name_1 == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
 	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_1].directive](value);
 	                murmur.$directives.push(directive);
-	                murmur.repeatMMDState.repeatDirective = directive;
+	                murmur.$repeatDirective.repeatDInstance = directive;
 	                return directive.compile(model, murmur, domGenerated);
 	            }
 	        }
@@ -232,10 +245,7 @@
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            if (murmur.repeatMMDState.inRepeat) {
-	                child.repeatMMDState.inRepeat = true;
-	                child.repeatMMDState.repeatModel = murmur.repeatMMDState.repeatModel;
-	            }
+	            child.$repeatDirective.repeatModel = murmur.$repeatDirective.repeatModel;
 	            parent.appendChild(child.create(model));
 	        }
 	    };
@@ -439,10 +449,15 @@
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
 	    "mm-if": { name: "mm-if", directive: "IfDirective" }
 	};
+	var MurmurConnectTypes;
+	(function (MurmurConnectTypes) {
+	    MurmurConnectTypes[MurmurConnectTypes["DOM"] = 0] = "DOM";
+	    MurmurConnectTypes[MurmurConnectTypes["DIRECTIVE"] = 1] = "DIRECTIVE";
+	})(MurmurConnectTypes = exports.MurmurConnectTypes || (exports.MurmurConnectTypes = {}));
 
 /***/ },
 /* 7 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
@@ -453,6 +468,7 @@
 	    }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
+	var murmur_core_1 = __webpack_require__(2);
 	var MurmurDirective = function () {
 	    function MurmurDirective(directiveExpression) {
 	        this.directiveExpression = directiveExpression;
@@ -464,24 +480,31 @@
 	    __extends(RepeatDirective, _super);
 	    function RepeatDirective() {
 	        var _this = _super.apply(this, arguments) || this;
-	        _this._connect = [];
+	        _this.murmurList = [];
 	        return _this;
 	    }
 	    RepeatDirective.prototype.compile = function (model, murmur, domGenerated) {
-	        murmur.repeatMMDState.inRepeat = true;
+	        // murmur.$repeatDirective.inRepeat=true;
 	        var dExp = this.directiveExpression;
 	        var fragment = document.createDocumentFragment();
 	        if (model[dExp]) {
 	            for (var _i = 0, _a = model[dExp]; _i < _a.length; _i++) {
 	                var a = _a[_i];
-	                murmur.repeatMMDState.repeatModel = a;
-	                var repeatDom = murmur.create(model);
-	                this._connect.push(repeatDom);
+	                var clone = murmur_core_1.default.clone(murmur);
+	                clone.$repeatDirective.$repeatEntrance = false;
+	                clone.$repeatDirective.$repeatEntity = true;
+	                clone.$repeatDirective.repeatModel = a;
+	                this.murmurList.push(clone);
+	                // clone.$repeatDirective=murmur.$repeatDirective;
+	                var repeatDom = clone.create(model);
 	                fragment.appendChild(repeatDom);
 	            }
 	        }
-	        murmur.repeatMMDState.inRepeat = false;
+	        // murmur.$repeatDirective.inRepeat=false;
 	        return fragment;
+	    };
+	    RepeatDirective.prototype.update = function (murmur) {
+	        console.log(murmur);
 	    };
 	    return RepeatDirective;
 	}(MurmurDirective);
@@ -498,6 +521,7 @@
 	        }
 	        return domGenerated;
 	    };
+	    IfDirective.prototype.update = function () {};
 	    return IfDirective;
 	}(MurmurDirective);
 	exports.IfDirective = IfDirective;
@@ -506,15 +530,38 @@
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports=__webpack_require__(9)['default']();
+	"use strict";
+
+	var murmur_type_1 = __webpack_require__(6);
+	var Connect = function () {
+	    function Connect(dom, type) {
+	        this.dom = dom;
+	        this.type = type;
+	    }
+	    Connect.prototype.isSimpleDom = function () {
+	        return this.type == murmur_type_1.MurmurConnectTypes[0];
+	    };
+	    Connect.prototype.get = function () {
+	        return this.dom;
+	    };
+	    return Connect;
+	}();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = Connect;
 
 /***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
+	module.exports=__webpack_require__(10)['default']();
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
 	"use strict";
-	var wxParser_tool_1 = __webpack_require__(10);
-	var wxParser_type_1 = __webpack_require__(11);
+	var wxParser_tool_1 = __webpack_require__(11);
+	var wxParser_type_1 = __webpack_require__(12);
 	function isText(obj) {
 	    return obj.type == wxParser_type_1.TEXTNODE;
 	}
@@ -620,7 +667,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -658,7 +705,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	"use strict";
