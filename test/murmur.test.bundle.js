@@ -72,8 +72,9 @@
 	//     });
 	// }, 3000)
 
-	Murmur.render({
+	let app = Murmur.render({
 	    templateUrl: 'template.html',
+	    loc: 'app',
 	    model: {
 	        src: 'http://ggoer.com/favicon.ico',
 	        name: 'luwenxu',
@@ -84,8 +85,20 @@
 	            age: 24,
 	            show: true
 	        }]
+	    },
+	    ok: function (tree) {
+	        app = tree;
 	    }
 	});
+
+	setTimeout(function () {
+	    app.update({
+	        name: 'daidai',
+	        position: 'nurse',
+	        location: 'nanjing',
+	        people: [{ age: 25 }, { age: 21 }]
+	    });
+	}, 3000);
 
 /***/ },
 /* 1 */
@@ -199,24 +212,26 @@
 	        }
 	    };
 	    Murmur.render = function (renderObj) {
-	        var root,
-	            murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+\})/g;
 	        var finalTemplate;
 	        if (renderObj.template) {
 	            finalTemplate = renderObj.template;
-	            Murmur.append(finalTemplate, renderObj.model);
+	            Murmur.append(finalTemplate, renderObj);
 	        } else if (renderObj.templateUrl) {
 	            fetch(renderObj.templateUrl).then(function (response) {
 	                return response.text();
 	            }).then(function (body) {
 	                finalTemplate = body;
-	                Murmur.append(finalTemplate, renderObj.model);
+	                Murmur.append(finalTemplate, renderObj);
 	            });
 	        }
 	    };
-	    Murmur.append = function (template, model) {
-	        var murmurRoot = Murmur.convert(wx_parser_1.wxParser.parseStart(template)).create(model);
-	        console.log(murmurRoot);
+	    Murmur.append = function (template, renderObj) {
+	        var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
+	        var murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(template, murmurRegex));
+	        var domRoot = murmurTree.create(renderObj.model);
+	        var doc = document.getElementById(renderObj.loc);
+	        doc.appendChild(domRoot.childNodes[0]);
+	        renderObj.ok && renderObj.ok(murmurTree);
 	    };
 	    return Murmur;
 	}();

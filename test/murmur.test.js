@@ -26,8 +26,9 @@ let Murmur = require('../index')
 //     });
 // }, 3000)
 
-Murmur.render({
+let app=Murmur.render({
     templateUrl: 'template.html',
+    loc:'app',
     model: {
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
@@ -38,5 +39,17 @@ Murmur.render({
             age: 24,
             show: true
         }]
+    },
+    ok:function(tree){
+        app=tree;
     }
 })
+
+setTimeout(function(){
+    app.update({
+        name: 'daidai',
+        position:'nurse',
+        location: 'nanjing',
+        people:[{age:25},{age:21}]
+    });
+},3000)

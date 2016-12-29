@@ -81,7 +81,7 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: HTMLElement): Node {
         let dExp = this.directiveExpression;
         if (!murmur.extract(dExp)) {
-            domGenerated.setAttribute('data-delete', '1')
+            domGenerated.classList.add('murmur-ready-delete')
         }
         return domGenerated
     }

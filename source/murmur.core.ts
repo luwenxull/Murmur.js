@@ -14,9 +14,11 @@ export interface MurmurItf {
 }
 
 interface renderItf {
-    model,
-    template: string,
-    templateUrl: string
+    model
+    template: string
+    templateUrl?: string
+    loc:string
+    ok?:(tree:Murmur)=>void
 }
 let murmurID = 1;
 
@@ -106,22 +108,25 @@ export default class Murmur implements MurmurItf {
         }
     }
     static render(renderObj: renderItf) {
-        let root, murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+\})/g;
         let finalTemplate;
         if (renderObj.template) {
             finalTemplate=renderObj.template;
-            Murmur.append(finalTemplate,renderObj.model)
+            Murmur.append(finalTemplate,renderObj)
         } else if (renderObj.templateUrl) {
             fetch(renderObj.templateUrl).then(function (response) {
                 return response.text()
             }).then(function (body) {
                 finalTemplate=body;
-                Murmur.append(finalTemplate,renderObj.model)
+                Murmur.append(finalTemplate,renderObj)
             })
         }
     }
-    static append(template,model){
-        let murmurRoot=Murmur.convert(wxParser.parseStart(template)).create(model);
-        console.log(murmurRoot);
+    static append(template,renderObj:renderItf){
+        let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
+        let murmurTree=Murmur.convert(wxParser.parseStart(template,murmurRegex));
+        let domRoot=murmurTree.create(renderObj.model);
+        let doc=document.getElementById(renderObj.loc);
+        doc.appendChild(domRoot.childNodes[0]);
+        renderObj.ok && renderObj.ok(murmurTree);
     }
 }
