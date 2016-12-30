@@ -1,7 +1,7 @@
 import Murmur from "./murmur.core"
 import MurmurField from "./murmur.field"
 import * as tools from "./murmur.tool"
-import { MurmurFieldType, MurmurRegexType, MurmurDirectiveTypes, MurmurDirectiveTypesMap, MurmurConnectTypes } from "./murmur.type"
+import { MurmurFieldType, MurmurRegexType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./murmur.type"
 import * as MurmurDirectives from "./murmur.directive"
 import Connect from "./murmur.connect"
 
@@ -29,7 +29,7 @@ class MurmurCreator {
         for (let attr of murmur.attr) {
             let {name, value} = attr;
             if (name == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
-                let directive = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
+                let directive = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
                 murmur.$directives.push(directive);
                 murmur.$repeatDirective.repeatDInstance = directive;
                 return directive.compile(model, murmur, domGenerated)
@@ -37,10 +37,17 @@ class MurmurCreator {
         }
         for (let attr of murmur.attr) {
             let {name, value} = attr;
-            if (name !== "mm-repeat" && MurmurDirectiveTypesMap[name]) {
-                let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypesMap[name].directive](value);
+            if (name !== "mm-repeat" && MurmurDirectiveTypes[name]) {
+                let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
                 murmur.$directives.push(directive);
                 directive.compile(model, murmur, domGenerated)
+            }
+            if (name in MurmurEventTypes) {
+                let eventName = name.split('-')[1],
+                    callback = murmur.extract(value);
+                domGenerated.addEventListener(eventName, (e) => {
+                    callback(murmur, e)
+                })
             }
         }
         return null

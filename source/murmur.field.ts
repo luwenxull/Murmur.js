@@ -1,7 +1,7 @@
 import { MurmurFieldType } from "./murmur.type"
 import Murmur from "./murmur.core"
 export default class MurmurField {
-    constructor(public value: string, public expression: string, public type: string, public unit) { }
+    constructor(public value: string, public expression: string, public type: number, public unit) { }
     dispatchSync(murmur: Murmur) {
         switch (this.type) {
             case MurmurFieldType.TEXT: {

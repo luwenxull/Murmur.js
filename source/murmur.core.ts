@@ -9,7 +9,7 @@ import "whatwg-fetch"
 
 export interface MurmurItf {
     nodeName: string,
-    attr: { name, value }[]
+    attr: { name:string, value:string }[]
     children: Array<Murmur | string>
 }
 
@@ -20,6 +20,7 @@ interface renderItf {
     loc: string
     ok?: (tree: Murmur) => void
 }
+
 let murmurID = 1;
 
 function isMurmur(obj: Murmur | string): obj is Murmur {
@@ -30,7 +31,7 @@ let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 let extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 export default class Murmur implements MurmurItf {
     public nodeName: string
-    public attr: { name, value }[]
+    public attr: { name:string, value:string }[]
     public children: Array<Murmur | string>
     public model: any
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }

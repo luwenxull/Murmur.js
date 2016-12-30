@@ -1,6 +1,6 @@
 {
   "name": "murmur-orz.js",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "么么！一个mvvm框架",
   "main": "Murmur.js",
   "directories": {
@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/luwenxull/murmur#readme",
   "dependencies": {
-    "whatwg-fetch": "^2.0.1",
     "wx-parser": "^1.1.0"
   },
   "scripts": {
@@ -33,5 +32,9 @@
     "babel-core": "^6.21.0",
     "babel-loader": "^6.2.10",
     "webpack": "^1.14.0"
+  },
+  "optionalDependencies": {
+    "hammerjs": "^2.0.8",
+    "whatwg-fetch": "^2.0.1"
   }
 }

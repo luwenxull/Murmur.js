@@ -58,6 +58,9 @@
 	            cn2: 'test',
 	            position: 'fe',
 	            location: "suzhou",
+	            click: function () {
+	                console.log('click me');
+	            },
 	            people: [{
 	                age: 24,
 	                show: true
@@ -69,6 +72,7 @@
 	app.then(function (tree) {
 	    setTimeout(function () {
 	        tree.update({
+	            cn1: 'blue',
 	            people: [{
 	                age: 30
 	            }, {
@@ -285,21 +289,31 @@
 	            var name_1 = attr.name,
 	                value = attr.value;
 	            if (name_1 == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_1].directive](value);
+	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_1].directive](value);
 	                murmur.$directives.push(directive);
 	                murmur.$repeatDirective.repeatDInstance = directive;
 	                return directive.compile(model, murmur, domGenerated);
 	            }
 	        }
-	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
-	            var attr = _c[_b];
+	        var _loop_1 = function (attr) {
 	            var name_2 = attr.name,
 	                value = attr.value;
-	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypesMap[name_2]) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypesMap[name_2].directive](value);
+	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypes[name_2]) {
+	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_2].directive](value);
 	                murmur.$directives.push(directive);
 	                directive.compile(model, murmur, domGenerated);
 	            }
+	            if (name_2 in murmur_type_1.MurmurEventTypes) {
+	                var eventName = name_2.split('-')[1],
+	                    callback_1 = murmur.extract(value);
+	                domGenerated.addEventListener(eventName, function (e) {
+	                    callback_1(murmur, e);
+	                });
+	            }
+	        };
+	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
+	            var attr = _c[_b];
+	            _loop_1(attr);
 	        }
 	        return null;
 	    };
@@ -503,12 +517,12 @@
 	    NODEEND: 'NODEEND',
 	    NODECLOSESELF: 'NODECLOSESELF'
 	};
-	exports.MurmurFieldType = {
-	    ATTR: 'ATTR',
-	    TEXT: 'TEXT'
-	};
-	exports.MurmurDirectiveTypes = ['mm-repeat', 'mm-if'];
-	exports.MurmurDirectiveTypesMap = {
+	var MurmurFieldType;
+	(function (MurmurFieldType) {
+	    MurmurFieldType[MurmurFieldType["ATTR"] = 0] = "ATTR";
+	    MurmurFieldType[MurmurFieldType["TEXT"] = 1] = "TEXT";
+	})(MurmurFieldType = exports.MurmurFieldType || (exports.MurmurFieldType = {}));
+	exports.MurmurDirectiveTypes = {
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
 	    "mm-if": { name: "mm-if", directive: "IfDirective" }
 	};
@@ -517,6 +531,10 @@
 	    MurmurConnectTypes[MurmurConnectTypes["DOM"] = 0] = "DOM";
 	    MurmurConnectTypes[MurmurConnectTypes["DIRECTIVE"] = 1] = "DIRECTIVE";
 	})(MurmurConnectTypes = exports.MurmurConnectTypes || (exports.MurmurConnectTypes = {}));
+	var MurmurEventTypes;
+	(function (MurmurEventTypes) {
+	    MurmurEventTypes[MurmurEventTypes["mm-click"] = 0] = "mm-click";
+	})(MurmurEventTypes = exports.MurmurEventTypes || (exports.MurmurEventTypes = {}));
 
 /***/ },
 /* 6 */

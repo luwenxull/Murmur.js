@@ -1,22 +1,17 @@
-export let MurmurRegexType={
-    TEXTNODE:'TEXTNODE',
-    NODESTART:'NODESTART',
-    NODEEND:'NODEEND',
-    NODECLOSESELF:'NODECLOSESELF'
+export let MurmurRegexType = {
+    TEXTNODE: 'TEXTNODE',
+    NODESTART: 'NODESTART',
+    NODEEND: 'NODEEND',
+    NODECLOSESELF: 'NODECLOSESELF'
 }
 
-export let MurmurFieldType={
-    ATTR:'ATTR',
-    TEXT:'TEXT'
+export enum MurmurFieldType { ATTR, TEXT }
+
+export let MurmurDirectiveTypes = {
+    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
+    "mm-if": { name: "mm-if", directive: "IfDirective" }
 }
 
-export let MurmurDirectiveTypes=[
-    'mm-repeat','mm-if'
-]
+export enum MurmurConnectTypes { "DOM", "DIRECTIVE" }
 
-export let MurmurDirectiveTypesMap={
-    "mm-repeat":{name:"mm-repeat",directive:"RepeatDirective"},
-    "mm-if":{name:"mm-if",directive:"IfDirective"}
-}
-
-export enum MurmurConnectTypes {DOM,DIRECTIVE}
+export enum MurmurEventTypes { "mm-click" }

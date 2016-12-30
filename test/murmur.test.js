@@ -12,6 +12,9 @@ let app = Murmur.prepare({
             cn2: 'test',
             position: 'fe',
             location: "suzhou",
+            click:function(){
+                console.log('click me');
+            },
             people: [{
                 age: 24,
                 show: true
@@ -23,6 +26,7 @@ let app = Murmur.prepare({
 app.then(function (tree) {
     setTimeout(function () {
             tree.update({
+                cn1:'blue',
                 people: [{
                     age: 30
                 },{
