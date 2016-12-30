@@ -44,7 +44,7 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	let Murmur = __webpack_require__(1);
+	let Murmur = __webpack_require__(1).Murmur;
 
 	let app = Murmur.prepare({
 	    templateUrl: 'template.html',
@@ -70,11 +70,9 @@
 	    setTimeout(function () {
 	        tree.update({
 	            people: [{
-	                age: 30,
-	                show: true
+	                age: 30
 	            }, {
-	                age: 25,
-	                show: true
+	                age: 25
 	            }, {
 	                age: 26,
 	                show: true
@@ -91,8 +89,7 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	let Murmur = __webpack_require__(2)['default'];
-	module.exports = Murmur;
+	exports.Murmur = __webpack_require__(2)['default'];
 
 /***/ },
 /* 2 */
@@ -629,7 +626,7 @@
 	        }
 	        return domGenerated;
 	    };
-	    IfDirective.prototype.update = function () {};
+	    IfDirective.prototype.update = function (murmur, updateData) {};
 	    return IfDirective;
 	}(MurmurDirective);
 	exports.IfDirective = IfDirective;

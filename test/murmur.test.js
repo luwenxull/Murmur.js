@@ -1,4 +1,4 @@
-let Murmur = require('../index')
+let Murmur = require('../Murmur').Murmur
 
 let app = Murmur.prepare({
     templateUrl: 'template.html',
@@ -24,11 +24,9 @@ app.then(function (tree) {
     setTimeout(function () {
             tree.update({
                 people: [{
-                    age: 30,
-                    show: true
+                    age: 30
                 },{
                     age: 25,
-                    show: true
                 },{
                     age: 26,
                     show: true

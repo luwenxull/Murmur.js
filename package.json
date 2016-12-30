@@ -1,8 +1,8 @@
 {
   "name": "murmur",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "么么！一个mvvm框架",
-  "main": "index.js",
+  "main": "Murmur.js",
   "directories": {
     "test": "test"
   },
