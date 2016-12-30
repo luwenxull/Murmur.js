@@ -1,4 +1,4 @@
-let Murmur=require('../Murmur').Murmur
+let Murmur = require('../Murmur').Murmur
 let app = Murmur.prepare({
     templateUrl: 'template.html',
     loc: 'app',
@@ -11,7 +11,7 @@ let app = Murmur.prepare({
             cn2: 'test',
             position: 'fe',
             location: "suzhou",
-            click:function(){
+            click: function () {
                 console.log('click me');
             },
             people: [{
@@ -22,22 +22,20 @@ let app = Murmur.prepare({
     }
 })
 
-app.then(function (tree) {
-    setTimeout(function () {
-            tree.update({
-                cn1:'blue',
-                people: [{
-                    age: 30
-                },{
-                    age: 25,
-                },{
-                    age: 26,
-                    show: true
-                },{
-                    age: 27,
-                    show: true
-                }]
-            });
-        }, 3000)
-        // console.log('hello');
-})
+
+setTimeout(function () {
+    app().update({
+        cn1: 'blue',
+        people: [{
+            age: 30
+        }, {
+            age: 25,
+        }, {
+            age: 26,
+            show: true
+        }, {
+            age: 27,
+            show: true
+        }]
+    });
+}, 3000)

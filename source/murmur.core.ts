@@ -1,6 +1,6 @@
 import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
-import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon } from "./murmur.tool"
+import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax } from "./murmur.tool"
 import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
@@ -9,7 +9,7 @@ import "whatwg-fetch"
 
 export interface MurmurItf {
     nodeName: string,
-    attr: { name:string, value:string }[]
+    attr: { name: string, value: string }[]
     children: Array<Murmur | string>
 }
 
@@ -31,7 +31,7 @@ let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 let extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 export default class Murmur implements MurmurItf {
     public nodeName: string
-    public attr: { name:string, value:string }[]
+    public attr: { name: string, value: string }[]
     public children: Array<Murmur | string>
     public model: any
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }
@@ -66,7 +66,7 @@ export default class Murmur implements MurmurItf {
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
         if (this._connected.isSimpleDom()) {
             for (let $d of this.$directives) {
-                $d.update(this,updateObj)
+                $d.update(this, updateObj)
             }
             this.doUpdate(updateObj, keysNeedToBeUpdate);
             for (let child of this.children) {
@@ -142,16 +142,16 @@ export default class Murmur implements MurmurItf {
             murmurTree._loc = renderObj.loc;
             return murmurTree
         } else if (renderObj.templateUrl) {
-            return fetch(renderObj.templateUrl).then(function (response) {
-                return response.text()
-            }).then(function (body) {
-                murmurTree = Murmur.convert(wxParser.parseStart(body, murmurRegex));
-                murmurTree._loc = renderObj.loc;
-                return murmurTree
-            }).then(murmurTree => {
-                renderObj.ok && renderObj.ok(murmurTree);
-                return murmurTree
+            ajax({
+                url: renderObj.templateUrl,
+                success: function (responseText) {
+                    murmurTree = Murmur.convert(wxParser.parseStart(responseText, murmurRegex));
+                    murmurTree._loc = renderObj.loc;
+                    renderObj.ok && renderObj.ok(murmurTree);
+                }
             })
+
+            return ()=>murmurTree
         }
     }
 }

@@ -1,6 +1,6 @@
 import Murmur from "./murmur.core"
 import MurmurField from "./murmur.field"
-
+export {ajax} from "./murmur.tools.ajax"
 /**
  * 判断是否是简单值
  * 
