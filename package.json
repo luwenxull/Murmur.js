@@ -1,6 +1,6 @@
 {
   "name": "murmur-orz.js",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "么么！一个mvvm框架",
   "main": "Murmur.js",
   "directories": {
@@ -26,7 +26,8 @@
   },
   "scripts": {
     "tsc": "tsc --outDir lib -p source",
-    "test": "tsc --outDir lib -p source && webpack --config webpack.test.config.js"
+    "test": "tsc --outDir lib -p source && webpack --config webpack.test.config.js",
+    "build": "tsc --outDir lib -p source && webpack --config webpack.config.js"
   },
   "devDependencies": {
     "babel-core": "^6.21.0",

@@ -1,5 +1,4 @@
-let Murmur = require('../Murmur').Murmur
-
+let Murmur=require('../Murmur').Murmur
 let app = Murmur.prepare({
     templateUrl: 'template.html',
     loc: 'app',
