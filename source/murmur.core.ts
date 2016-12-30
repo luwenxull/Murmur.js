@@ -64,7 +64,10 @@ export default class Murmur implements MurmurItf {
     }
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
         if (this._connected.isSimpleDom()) {
-            this.doUpdate(updateObj, keysNeedToBeUpdate)
+            for (let $d of this.$directives) {
+                $d.update(this,updateObj)
+            }
+            this.doUpdate(updateObj, keysNeedToBeUpdate);
             for (let child of this.children) {
                 if (isMurmur(child)) {
                     child.dispatchUpdate(updateObj, keysNeedToBeUpdate)
@@ -80,13 +83,6 @@ export default class Murmur implements MurmurItf {
             if (keysNeedToBeUpdate.indexOf(removeFirstColon(field)) !== -1) {
                 this._fields[field].dispatchSync(this);
             }
-            // this._fields[field].dispatchSync(this);
-            // let newVal = this.extract(field);
-            // if (this._fields[field].attrCatcher) {
-            //     this._fields[field].attrCatcher.value = newVal;
-            // } else {
-            //     this._connected.get().textContent = newVal;
-            // }
         }
     }
     evalExpression(val: string, unit, fieldType): string {

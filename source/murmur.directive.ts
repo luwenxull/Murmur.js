@@ -1,5 +1,5 @@
 import Murmur from "./murmur.core"
-import { removeAllSpace,addSibling } from "./murmur.tool"
+import { removeAllSpace, addSibling } from "./murmur.tool"
 import Connect from "./murmur.connect"
 
 export interface MurmurDirectiveItf {
@@ -34,7 +34,7 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
     }
     update(murmur: Murmur, updateData) {
         let repeatArr = updateData[this.directiveExpression];
-        let keysNeedToBeUpdate=Object.keys(updateData)
+        let keysNeedToBeUpdate = Object.keys(updateData)
         if (repeatArr) {
             let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
             this.lengthCheck(repeatArr, murmur)
@@ -44,7 +44,7 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 if (m) {
                     m.$repeatDirective.repeatModel = repeatObj;
                     m.replaceRepeatModelOfChild(repeatObj);
-                    m.dispatchUpdate(updateData,keysNeedToBeUpdate.concat(Object.keys(repeatObj)))
+                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(repeatObj)))
                 }
             }
         }
@@ -66,13 +66,13 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
     }
     addExtraMurmur(repeatArr: any[], murmur: Murmur, mmListLength, repeatArrLength) {
         while (mmListLength < repeatArrLength) {
-            let clone = Murmur.clone(murmur),newDom,lastDom
+            let clone = Murmur.clone(murmur), newDom, lastDom
             clone.$repeatDirective.$repeatEntrance = false;
             clone.$repeatDirective.$repeatEntity = true;
             clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
-            newDom=clone.create(murmur.model);
-            lastDom=this.murmurList[mmListLength-2]._connected.get();
-            addSibling(lastDom,newDom);
+            newDom = clone.create(murmur.model);
+            lastDom = this.murmurList[mmListLength - 2]._connected.get();
+            addSibling(lastDom, newDom);
             this.murmurList.push(clone);
         }
     }
@@ -82,11 +82,17 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(model, murmur: Murmur, domGenerated: HTMLElement): Node {
         let dExp = this.directiveExpression;
         if (!murmur.extract(dExp)) {
-            domGenerated.classList.add('murmur-ready-delete')
+            domGenerated.style.display = 'none'
         }
         return domGenerated
     }
     update(murmur: Murmur, updateData) {
-        
+        let dExp = this.directiveExpression;
+        let dom = <HTMLElement>murmur._connected.get();
+        if (!murmur.extract(dExp)) {
+            dom.style.display = 'none'
+        } else {
+            dom.style.display = ''
+        }
     }
 }

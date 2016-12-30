@@ -140,9 +140,13 @@
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
 	        if (this._connected.isSimpleDom()) {
+	            for (var _i = 0, _a = this.$directives; _i < _a.length; _i++) {
+	                var $d = _a[_i];
+	                $d.update(this, updateObj);
+	            }
 	            this.doUpdate(updateObj, keysNeedToBeUpdate);
-	            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-	                var child = _a[_i];
+	            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
+	                var child = _c[_b];
 	                if (isMurmur(child)) {
 	                    child.dispatchUpdate(updateObj, keysNeedToBeUpdate);
 	                }
@@ -622,11 +626,19 @@
 	    IfDirective.prototype.compile = function (model, murmur, domGenerated) {
 	        var dExp = this.directiveExpression;
 	        if (!murmur.extract(dExp)) {
-	            domGenerated.classList.add('murmur-ready-delete');
+	            domGenerated.style.display = 'none';
 	        }
 	        return domGenerated;
 	    };
-	    IfDirective.prototype.update = function (murmur, updateData) {};
+	    IfDirective.prototype.update = function (murmur, updateData) {
+	        var dExp = this.directiveExpression;
+	        var dom = murmur._connected.get();
+	        if (!murmur.extract(dExp)) {
+	            dom.style.display = 'none';
+	        } else {
+	            dom.style.display = '';
+	        }
+	    };
 	    return IfDirective;
 	}(MurmurDirective);
 	exports.IfDirective = IfDirective;
