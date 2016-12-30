@@ -33,7 +33,8 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
         return fragment
     }
     update(murmur: Murmur, updateData) {
-        let repeatArr = updateData[this.directiveExpression]
+        let repeatArr = updateData[this.directiveExpression];
+        let keysNeedToBeUpdate=Object.keys(updateData)
         if (repeatArr) {
             let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
             this.lengthCheck(repeatArr, murmur)
@@ -43,7 +44,7 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 if (m) {
                     m.$repeatDirective.repeatModel = repeatObj;
                     m.replaceRepeatModelOfChild(repeatObj);
-                    m.dispatchUpdate(updateData)
+                    m.dispatchUpdate(updateData,keysNeedToBeUpdate.concat(Object.keys(repeatObj)))
                 }
             }
         }
@@ -85,7 +86,7 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
         }
         return domGenerated
     }
-    update() {
-
+    update(murmur: Murmur, updateData) {
+        
     }
 }

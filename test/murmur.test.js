@@ -9,7 +9,7 @@ let app = Murmur.prepare({
             src: 'http://ggoer.com/favicon.ico',
             name: 'luwenxu',
             cn1: 'red',
-            cn2:'test',
+            cn2: 'test',
             position: 'fe',
             location: "suzhou",
             people: [{
@@ -20,11 +20,23 @@ let app = Murmur.prepare({
     }
 })
 
-// app.then(function (tree) {
-//     setTimeout(function () {
-//         tree.update({
-//             src:'http://stats.nba.com/media/img/teams/logos/season/2016-17/MIA_logo.svg'
-//         });
-//     }, 3000)
-//     // console.log('hello');
-// })
+app.then(function (tree) {
+    setTimeout(function () {
+            tree.update({
+                people: [{
+                    age: 30,
+                    show: true
+                },{
+                    age: 25,
+                    show: true
+                },{
+                    age: 26,
+                    show: true
+                },{
+                    age: 27,
+                    show: true
+                }]
+            });
+        }, 3000)
+        // console.log('hello');
+})

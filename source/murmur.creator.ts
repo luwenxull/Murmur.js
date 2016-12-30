@@ -48,7 +48,7 @@ class MurmurCreator {
     attachAttr(dom: HTMLElement, model, murmur: Murmur): void {
         for (let a of murmur.attr) {
             let htmlAttr = document.createAttribute(a.name);
-            htmlAttr.value = this.evalExpression(a.value, model, murmur, htmlAttr, MurmurFieldType.ATTR);
+            htmlAttr.value = murmur.evalExpression(a.value, htmlAttr, MurmurFieldType.ATTR);
             dom.setAttributeNode(htmlAttr);
         }
     }
@@ -65,7 +65,7 @@ class MurmurCreator {
         try {
             if (tools.isSimpleValue(onlyChild)) {
                 textNode = document.createTextNode('');
-                this.evalExpression(<string>onlyChild, model, murmur)
+                textNode.textContent = murmur.evalExpression(<string>onlyChild, textNode, MurmurFieldType.TEXT);
             } else {
                 throw new TypeError()
             }
@@ -76,21 +76,6 @@ class MurmurCreator {
             return textNode
         }
 
-    }
-    evalExpression(val: string, model, murmur: Murmur, attr = null, fieldType: string = MurmurFieldType.TEXT): string {
-        let copyVal=val;
-        if (!tools.isNothing(val)) {
-            let matches = val.match(this.extractValueRegexr);
-            if (matches) {
-                for (let m of matches) {
-                    let key = tools.removeBraceOfValue(m);
-                    let value = murmur.extract(key);
-                    murmur._fields[key] = new MurmurField(value, fieldType, attr)
-                    copyVal = copyVal.replace(m, value);
-                }
-            }
-        }
-        return copyVal
     }
 }
 

@@ -66,14 +66,26 @@
 	    }
 	});
 
-	// app.then(function (tree) {
-	//     setTimeout(function () {
-	//         tree.update({
-	//             src:'http://stats.nba.com/media/img/teams/logos/season/2016-17/MIA_logo.svg'
-	//         });
-	//     }, 3000)
-	//     // console.log('hello');
-	// })
+	app.then(function (tree) {
+	    setTimeout(function () {
+	        tree.update({
+	            people: [{
+	                age: 30,
+	                show: true
+	            }, {
+	                age: 25,
+	                show: true
+	            }, {
+	                age: 26,
+	                show: true
+	            }, {
+	                age: 27,
+	                show: true
+	            }]
+	        });
+	    }, 3000);
+	    // console.log('hello');
+	});
 
 /***/ },
 /* 1 */
@@ -89,7 +101,8 @@
 	"use strict";
 
 	var murmur_creator_1 = __webpack_require__(3);
-	var murmur_tool_1 = __webpack_require__(5);
+	var murmur_field_1 = __webpack_require__(8);
+	var murmur_tool_1 = __webpack_require__(4);
 	var wx_parser_1 = __webpack_require__(9);
 	__webpack_require__(13);
 	var murmurID = 1;
@@ -97,6 +110,7 @@
 	    return obj instanceof Murmur;
 	}
 	var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
+	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
@@ -123,34 +137,47 @@
 	            loc.appendChild(childNodes[i]);
 	        }
 	    };
-	    Murmur.prototype.dispatchUpdate = function (updateObj) {
+	    Murmur.prototype.update = function (updateObj) {
+	        Object.assign(this.model, updateObj);
+	        this.dispatchUpdate(updateObj, Object.keys(updateObj));
+	    };
+	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
 	        if (this._connected.isSimpleDom()) {
-	            this.doUpdate(updateObj);
+	            this.doUpdate(updateObj, keysNeedToBeUpdate);
 	            for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
 	                var child = _a[_i];
 	                if (isMurmur(child)) {
-	                    child.dispatchUpdate(updateObj);
+	                    child.dispatchUpdate(updateObj, keysNeedToBeUpdate);
 	                }
 	            }
 	        } else {
 	            this.$repeatDirective.repeatDInstance.update(this, updateObj);
 	        }
 	    };
-	    Murmur.prototype.doUpdate = function (updateObj) {
+	    Murmur.prototype.doUpdate = function (updateObj, keysNeedToBeUpdate) {
 	        var fieldKeys = Object.keys(this._fields);
 	        for (var _i = 0, fieldKeys_1 = fieldKeys; _i < fieldKeys_1.length; _i++) {
 	            var field = fieldKeys_1[_i];
-	            var newVal = this.extract(field);
-	            if (this._fields[field].attrCatcher) {
-	                this._fields[field].attrCatcher.value = newVal;
-	            } else {
-	                this._connected.get().textContent = newVal;
+	            if (keysNeedToBeUpdate.indexOf(murmur_tool_1.removeFirstColon(field)) !== -1) {
+	                this._fields[field].dispatchSync(this);
 	            }
 	        }
 	    };
-	    Murmur.prototype.update = function (updateObj) {
-	        Object.assign(this.model, updateObj);
-	        this.dispatchUpdate(updateObj);
+	    Murmur.prototype.evalExpression = function (val, unit, fieldType) {
+	        var copyVal = val;
+	        if (!murmur_tool_1.isNothing(val)) {
+	            var matches = val.match(extractValueRegexr);
+	            if (matches) {
+	                for (var _i = 0, matches_1 = matches; _i < matches_1.length; _i++) {
+	                    var m = matches_1[_i];
+	                    var key = murmur_tool_1.removeBraceOfValue(murmur_tool_1.removeAllSpace(m));
+	                    var value = this.extract(key);
+	                    this._fields[key] = new murmur_field_1.default(value, val, fieldType, unit);
+	                    copyVal = copyVal.replace(m, value);
+	                }
+	            }
+	        }
+	        return copyVal;
 	    };
 	    Murmur.prototype.extract = function (field) {
 	        var repeatModel = this.$repeatDirective.repeatModel;
@@ -225,11 +252,10 @@
 
 	"use strict";
 
-	var murmur_field_1 = __webpack_require__(4);
-	var tools = __webpack_require__(5);
-	var murmur_type_1 = __webpack_require__(6);
-	var MurmurDirectives = __webpack_require__(7);
-	var murmur_connect_1 = __webpack_require__(8);
+	var tools = __webpack_require__(4);
+	var murmur_type_1 = __webpack_require__(5);
+	var MurmurDirectives = __webpack_require__(6);
+	var murmur_connect_1 = __webpack_require__(7);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
 	        this.extractValueRegexr = /\{:{0,1}\w+\}/g;
@@ -280,7 +306,7 @@
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var a = _a[_i];
 	            var htmlAttr = document.createAttribute(a.name);
-	            htmlAttr.value = this.extractFromModel(a.value, model, murmur, htmlAttr, murmur_type_1.MurmurFieldType.ATTR);
+	            htmlAttr.value = murmur.evalExpression(a.value, htmlAttr, murmur_type_1.MurmurFieldType.ATTR);
 	            dom.setAttributeNode(htmlAttr);
 	        }
 	    };
@@ -297,7 +323,8 @@
 	        var textNode;
 	        try {
 	            if (tools.isSimpleValue(onlyChild)) {
-	                textNode = document.createTextNode(this.extractFromModel(onlyChild, model, murmur));
+	                textNode = document.createTextNode('');
+	                textNode.textContent = murmur.evalExpression(onlyChild, textNode, murmur_type_1.MurmurFieldType.TEXT);
 	            } else {
 	                throw new TypeError();
 	            }
@@ -307,27 +334,6 @@
 	        } finally {
 	            return textNode;
 	        }
-	    };
-	    MurmurCreator.prototype.extractFromModel = function (val, model, murmur, attr, fieldType) {
-	        if (attr === void 0) {
-	            attr = null;
-	        }
-	        if (fieldType === void 0) {
-	            fieldType = murmur_type_1.MurmurFieldType.TEXT;
-	        }
-	        if (!tools.isNothing(val)) {
-	            var matches = val.match(this.extractValueRegexr);
-	            if (matches) {
-	                for (var _i = 0, matches_1 = matches; _i < matches_1.length; _i++) {
-	                    var m = matches_1[_i];
-	                    var key = tools.removeBraceOfValue(m);
-	                    var value = murmur.extract(key);
-	                    murmur._fields[key] = new murmur_field_1.default(value, fieldType, attr);
-	                    val = val.replace(m, value);
-	                }
-	            }
-	        }
-	        return val;
 	    };
 	    return MurmurCreator;
 	}();
@@ -342,23 +348,6 @@
 
 /***/ },
 /* 4 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	var MurmurField = function () {
-	    function MurmurField(value, type, attrCatcher) {
-	        this.value = value;
-	        this.type = type;
-	        this.attrCatcher = attrCatcher;
-	    }
-	    return MurmurField;
-	}();
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = MurmurField;
-
-/***/ },
-/* 5 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -486,9 +475,23 @@
 	    }
 	}
 	exports.addSibling = addSibling;
+	/**
+	 * 返回不带冒号的属性值
+	 *
+	 * @export
+	 * @param {string} val
+	 * @returns {string}
+	 */
+	function removeFirstColon(val) {
+	    if (val[0] === ':') {
+	        return val.slice(1);
+	    }
+	    return val;
+	}
+	exports.removeFirstColon = removeFirstColon;
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -515,7 +518,7 @@
 	})(MurmurConnectTypes = exports.MurmurConnectTypes || (exports.MurmurConnectTypes = {}));
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -528,7 +531,7 @@
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	var murmur_core_1 = __webpack_require__(2);
-	var murmur_tool_1 = __webpack_require__(5);
+	var murmur_tool_1 = __webpack_require__(4);
 	var MurmurDirective = function () {
 	    function MurmurDirective(directiveExpression) {
 	        this.directiveExpression = directiveExpression;
@@ -565,6 +568,7 @@
 	    };
 	    RepeatDirective.prototype.update = function (murmur, updateData) {
 	        var repeatArr = updateData[this.directiveExpression];
+	        var keysNeedToBeUpdate = Object.keys(updateData);
 	        if (repeatArr) {
 	            var repeatArrLength = repeatArr.length,
 	                mmListLength = this.murmurList.length;
@@ -575,7 +579,7 @@
 	                if (m) {
 	                    m.$repeatDirective.repeatModel = repeatObj;
 	                    m.replaceRepeatModelOfChild(repeatObj);
-	                    m.dispatchUpdate(updateData);
+	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(repeatObj)));
 	                }
 	            }
 	        }
@@ -631,12 +635,12 @@
 	exports.IfDirective = IfDirective;
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(6);
+	var murmur_type_1 = __webpack_require__(5);
 	var Connect = function () {
 	    function Connect(dom, type) {
 	        this.dom = dom;
@@ -652,6 +656,44 @@
 	}();
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.default = Connect;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var murmur_type_1 = __webpack_require__(5);
+	var MurmurField = function () {
+	    function MurmurField(value, expression, type, unit) {
+	        this.value = value;
+	        this.expression = expression;
+	        this.type = type;
+	        this.unit = unit;
+	    }
+	    MurmurField.prototype.dispatchSync = function (murmur) {
+	        switch (this.type) {
+	            case murmur_type_1.MurmurFieldType.TEXT:
+	                {
+	                    this.doSyncText(murmur);
+	                    break;
+	                }
+	            default:
+	                {
+	                    this.doSyncAttr(murmur);
+	                }
+	        }
+	    };
+	    MurmurField.prototype.doSyncText = function (murmur) {
+	        this.unit.textContent = murmur.evalExpression(this.expression, this.unit, murmur_type_1.MurmurFieldType.TEXT);
+	    };
+	    MurmurField.prototype.doSyncAttr = function (murmur) {
+	        this.unit.value = murmur.evalExpression(this.expression, this.unit, murmur_type_1.MurmurFieldType.ATTR);
+	    };
+	    return MurmurField;
+	}();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.default = MurmurField;
 
 /***/ },
 /* 9 */
