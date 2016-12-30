@@ -48,7 +48,7 @@ class MurmurCreator {
     attachAttr(dom: HTMLElement, model, murmur: Murmur): void {
         for (let a of murmur.attr) {
             let htmlAttr = document.createAttribute(a.name);
-            htmlAttr.value = this.extractFromModel(a.value, model, murmur, htmlAttr, MurmurFieldType.ATTR);
+            htmlAttr.value = this.evalExpression(a.value, model, murmur, htmlAttr, MurmurFieldType.ATTR);
             dom.setAttributeNode(htmlAttr);
         }
     }
@@ -64,7 +64,8 @@ class MurmurCreator {
         let textNode;
         try {
             if (tools.isSimpleValue(onlyChild)) {
-                textNode = document.createTextNode(this.extractFromModel(<string>onlyChild, model, murmur))
+                textNode = document.createTextNode('');
+                this.evalExpression(<string>onlyChild, model, murmur)
             } else {
                 throw new TypeError()
             }
@@ -76,8 +77,8 @@ class MurmurCreator {
         }
 
     }
-    extractFromModel(val: string, model, murmur: Murmur, attr = null, fieldType: string = MurmurFieldType.TEXT): string {
-        let newString = val;
+    evalExpression(val: string, model, murmur: Murmur, attr = null, fieldType: string = MurmurFieldType.TEXT): string {
+        let copyVal=val;
         if (!tools.isNothing(val)) {
             let matches = val.match(this.extractValueRegexr);
             if (matches) {
@@ -85,11 +86,11 @@ class MurmurCreator {
                     let key = tools.removeBraceOfValue(m);
                     let value = murmur.extract(key);
                     murmur._fields[key] = new MurmurField(value, fieldType, attr)
-                    newString = val.replace(m, value);
+                    copyVal = copyVal.replace(m, value);
                 }
             }
         }
-        return newString
+        return copyVal
     }
 }
 

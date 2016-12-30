@@ -46,59 +46,34 @@
 
 	let Murmur = __webpack_require__(1);
 
-	// let wxParser = require('wx-parser');
-	// let root = wxParser.parseStart(`<div class="{className}">
-	// <p mm-repeat="people" mm-if=":show" data-name="{name}">{:age} {location}</p>
-	// <p>{name} is {position}</p>
-	// <img src='{src}'/>
-	// </div>`,/(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+\})/g);
-
-	// let rootDom = Murmur.convert(root);
-	// document.body.appendChild(rootDom.create({
-	//     src: 'http://ggoer.com/favicon.ico',
-	//     name: 'luwenxu',
-	//     className:'red',
-	//     position: 'fe',
-	//     location:"suzhou",
-	//     people: [{age:24,show:true}]
-	// }));
-
-	// setTimeout(function () {
-	//     rootDom.update({
-	//         name: 'daidai',
-	//         position:'nurse',
-	//         location: 'nanjing',
-	//         people:[{age:25},{age:21}]
-	//     });
-	// }, 3000)
-
-	let app = Murmur.render({
+	let app = Murmur.prepare({
 	    templateUrl: 'template.html',
 	    loc: 'app',
-	    model: {
-	        src: 'http://ggoer.com/favicon.ico',
-	        name: 'luwenxu',
-	        className: 'red',
-	        position: 'fe',
-	        location: "suzhou",
-	        people: [{
-	            age: 24,
-	            show: true
-	        }]
-	    },
 	    ok: function (tree) {
-	        app = tree;
+	        console.log(tree);
+	        tree.render({
+	            src: 'http://ggoer.com/favicon.ico',
+	            name: 'luwenxu',
+	            cn1: 'red',
+	            cn2: 'test',
+	            position: 'fe',
+	            location: "suzhou",
+	            people: [{
+	                age: 24,
+	                show: true
+	            }]
+	        });
 	    }
 	});
 
-	setTimeout(function () {
-	    app.update({
-	        name: 'daidai',
-	        position: 'nurse',
-	        location: 'nanjing',
-	        people: [{ age: 25 }, { age: 21 }]
-	    });
-	}, 3000);
+	// app.then(function (tree) {
+	//     setTimeout(function () {
+	//         tree.update({
+	//             src:'http://stats.nba.com/media/img/teams/logos/season/2016-17/MIA_logo.svg'
+	//         });
+	//     }, 3000)
+	//     // console.log('hello');
+	// })
 
 /***/ },
 /* 1 */
@@ -121,6 +96,7 @@
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
+	var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
@@ -138,6 +114,14 @@
 	        this.model = model;
 	        this._connected = murmur_creator_1.default().create(this, model);
 	        return this._connected.dom;
+	    };
+	    Murmur.prototype.render = function (model) {
+	        var root = this.create(model);
+	        var childNodes = root.childNodes;
+	        var loc = document.getElementById(this._loc);
+	        for (var i = 0; i < childNodes.length; i++) {
+	            loc.appendChild(childNodes[i]);
+	        }
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj) {
 	        if (this._connected.isSimpleDom()) {
@@ -211,27 +195,24 @@
 	            return murmur;
 	        }
 	    };
-	    Murmur.render = function (renderObj) {
-	        var finalTemplate;
+	    Murmur.prepare = function (renderObj) {
+	        var murmurTree;
 	        if (renderObj.template) {
-	            finalTemplate = renderObj.template;
-	            Murmur.append(finalTemplate, renderObj);
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
+	            murmurTree._loc = renderObj.loc;
+	            return murmurTree;
 	        } else if (renderObj.templateUrl) {
-	            fetch(renderObj.templateUrl).then(function (response) {
+	            return fetch(renderObj.templateUrl).then(function (response) {
 	                return response.text();
 	            }).then(function (body) {
-	                finalTemplate = body;
-	                Murmur.append(finalTemplate, renderObj);
+	                murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(body, murmurRegex));
+	                murmurTree._loc = renderObj.loc;
+	                return murmurTree;
+	            }).then(function (murmurTree) {
+	                renderObj.ok && renderObj.ok(murmurTree);
+	                return murmurTree;
 	            });
 	        }
-	    };
-	    Murmur.append = function (template, renderObj) {
-	        var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
-	        var murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(template, murmurRegex));
-	        var domRoot = murmurTree.create(renderObj.model);
-	        var doc = document.getElementById(renderObj.loc);
-	        doc.appendChild(domRoot.childNodes[0]);
-	        renderObj.ok && renderObj.ok(murmurTree);
 	    };
 	    return Murmur;
 	}();
@@ -334,7 +315,6 @@
 	        if (fieldType === void 0) {
 	            fieldType = murmur_type_1.MurmurFieldType.TEXT;
 	        }
-	        var newString = val;
 	        if (!tools.isNothing(val)) {
 	            var matches = val.match(this.extractValueRegexr);
 	            if (matches) {
@@ -343,11 +323,11 @@
 	                    var key = tools.removeBraceOfValue(m);
 	                    var value = murmur.extract(key);
 	                    murmur._fields[key] = new murmur_field_1.default(value, fieldType, attr);
-	                    newString = val.replace(m, value);
+	                    val = val.replace(m, value);
 	                }
 	            }
 	        }
-	        return newString;
+	        return val;
 	    };
 	    return MurmurCreator;
 	}();
@@ -641,7 +621,7 @@
 	    IfDirective.prototype.compile = function (model, murmur, domGenerated) {
 	        var dExp = this.directiveExpression;
 	        if (!murmur.extract(dExp)) {
-	            domGenerated.setAttribute('data-delete', '1');
+	            domGenerated.classList.add('murmur-ready-delete');
 	        }
 	        return domGenerated;
 	    };

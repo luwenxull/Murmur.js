@@ -25,6 +25,9 @@ let murmurID = 1;
 function isMurmur(obj: Murmur | string): obj is Murmur {
     return obj instanceof Murmur
 }
+
+let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
+
 export default class Murmur implements MurmurItf {
     public nodeName: string
     public attr: { name, value }[]
@@ -33,6 +36,7 @@ export default class Murmur implements MurmurItf {
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
+    public _loc:string
     public $directives: MurmurDirectiveItf[] = []
     public murmurID: number
     constructor(tagName, attr, children) {
@@ -45,6 +49,14 @@ export default class Murmur implements MurmurItf {
         this.model = model;
         this._connected = MurmurCreatorFactory().create(this, model);
         return this._connected.dom
+    }
+    render(model){
+        let root=this.create(model);
+        let childNodes=root.childNodes;
+        let loc=document.getElementById(this._loc);
+        for(let i=0;i<childNodes.length;i++){
+            loc.appendChild(childNodes[i])
+        }
     }
     dispatchUpdate(updateObj) {
         if (this._connected.isSimpleDom()) {
@@ -107,26 +119,23 @@ export default class Murmur implements MurmurItf {
             return murmur
         }
     }
-    static render(renderObj: renderItf) {
-        let finalTemplate;
+    static prepare(renderObj: renderItf) {
+        let murmurTree:Murmur;
         if (renderObj.template) {
-            finalTemplate=renderObj.template;
-            Murmur.append(finalTemplate,renderObj)
+            murmurTree=Murmur.convert(wxParser.parseStart(renderObj.template,murmurRegex));
+            murmurTree._loc=renderObj.loc;
+            return murmurTree
         } else if (renderObj.templateUrl) {
-            fetch(renderObj.templateUrl).then(function (response) {
+            return fetch(renderObj.templateUrl).then(function (response) {
                 return response.text()
             }).then(function (body) {
-                finalTemplate=body;
-                Murmur.append(finalTemplate,renderObj)
+                murmurTree=Murmur.convert(wxParser.parseStart(body,murmurRegex));
+                murmurTree._loc=renderObj.loc;
+                return murmurTree
+            }).then(murmurTree=>{
+                renderObj.ok && renderObj.ok(murmurTree);
+                return murmurTree
             })
         }
-    }
-    static append(template,renderObj:renderItf){
-        let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
-        let murmurTree=Murmur.convert(wxParser.parseStart(template,murmurRegex));
-        let domRoot=murmurTree.create(renderObj.model);
-        let doc=document.getElementById(renderObj.loc);
-        doc.appendChild(domRoot.childNodes[0]);
-        renderObj.ok && renderObj.ok(murmurTree);
     }
 }
