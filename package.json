@@ -1,6 +1,6 @@
 {
-  "name": "murmur",
-  "version": "0.5.1",
+  "name": "murmur-orz.js",
+  "version": "0.5.2",
   "description": "么么！一个mvvm框架",
   "main": "Murmur.js",
   "directories": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/luwenxull/murmur.git"
+    "url": "git+https://github.com/luwenxull/Murmur.js.git"
   },
   "keywords": [
     "mvvm",
