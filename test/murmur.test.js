@@ -1,5 +1,5 @@
 let Murmur = require('../Murmur').Murmur
-let app = Murmur.prepare({
+window.app = Murmur.prepare({
     templateUrl: 'template.html',
     loc: 'app',
     ok: function (tree) {
@@ -11,8 +11,11 @@ let app = Murmur.prepare({
             cn2: 'test',
             position: 'fe',
             location: "suzhou",
-            click: function () {
-                console.log('click me');
+            click: function (murmur,e) {
+                murmur.update({src:'https://i.ytimg.com/vi/7UjBV8D4un8/hqdefault.jpg?custom=true&w=196&h=110&stc=true&jpg444=true&jpgq=90&sp=68&sigh=6AsWhNuO9Z3nCsJ_u9knxYu_Y9k'})
+            },
+            click2:function(murmur,e){
+                murmur.update({location:'beijing',cn1:'green'})
             },
             people: [{
                 age: 24,
@@ -27,9 +30,8 @@ setTimeout(function () {
     app().update({
         cn1: 'blue',
         people: [{
-            age: 30
-        }, {
-            age: 25,
+            age: 30,
+            show:true
         }, {
             age: 26,
             show: true

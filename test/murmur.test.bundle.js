@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	let Murmur = __webpack_require__(1).Murmur;
-	let app = Murmur.prepare({
+	window.app = Murmur.prepare({
 	    templateUrl: 'template.html',
 	    loc: 'app',
 	    ok: function (tree) {
@@ -57,8 +57,11 @@
 	            cn2: 'test',
 	            position: 'fe',
 	            location: "suzhou",
-	            click: function () {
-	                console.log('click me');
+	            click: function (murmur, e) {
+	                murmur.update({ src: 'https://i.ytimg.com/vi/7UjBV8D4un8/hqdefault.jpg?custom=true&w=196&h=110&stc=true&jpg444=true&jpgq=90&sp=68&sigh=6AsWhNuO9Z3nCsJ_u9knxYu_Y9k' });
+	            },
+	            click2: function (murmur, e) {
+	                murmur.update({ location: 'beijing', cn1: 'green' });
 	            },
 	            people: [{
 	                age: 24,
@@ -72,9 +75,8 @@
 	    app().update({
 	        cn1: 'blue',
 	        people: [{
-	            age: 30
-	        }, {
-	            age: 25
+	            age: 30,
+	            show: true
 	        }, {
 	            age: 26,
 	            show: true
@@ -107,7 +109,6 @@
 	var murmur_field_1 = __webpack_require__(9);
 	var murmur_tool_1 = __webpack_require__(4);
 	var wx_parser_1 = __webpack_require__(10);
-	__webpack_require__(14);
 	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
@@ -116,6 +117,7 @@
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
+	        this.updateModel = {};
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
 	        this._fields = {};
 	        this.$directives = [];
@@ -141,7 +143,11 @@
 	        }
 	    };
 	    Murmur.prototype.update = function (updateObj) {
-	        Object.assign(this.model, updateObj);
+	        Object.assign(this.updateModel, updateObj);
+	        for (var _i = 0, _a = this.getRecursiveMurmurChildren(); _i < _a.length; _i++) {
+	            var deepChild = _a[_i];
+	            Object.assign(deepChild.updateModel, updateObj);
+	        }
 	        this.dispatchUpdate(updateObj, Object.keys(updateObj));
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
@@ -189,19 +195,36 @@
 	    Murmur.prototype.extract = function (field) {
 	        var repeatModel = this.$repeatDirective.repeatModel;
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
-	            return repeatModel[field.slice(1)];
+	            var ff = field.slice(1);
+	            if (ff in this.updateModel) {
+	                return this.updateModel[field.slice(1)];
+	            } else {
+	                return repeatModel[field.slice(1)];
+	            }
 	        } else {
-	            return this.model[field];
-	        }
-	    };
-	    Murmur.prototype.replaceRepeatModelOfChild = function (newModel) {
-	        for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-	            var child = _a[_i];
-	            if (isMurmur(child)) {
-	                child.$repeatDirective.repeatModel = newModel;
-	                child.replaceRepeatModelOfChild(newModel);
+	            if (field in this.updateModel) {
+	                return this.updateModel[field];
+	            } else {
+	                return this.model[field];
 	            }
 	        }
+	    };
+	    Murmur.prototype.getRecursiveMurmurChildren = function (recursiveChilren) {
+	        if (recursiveChilren === void 0) {
+	            recursiveChilren = [];
+	        }
+	        var murmurChildren = this.children;
+	        if (this.$repeatDirective.repeatDInstance) {
+	            murmurChildren = this.$repeatDirective.repeatDInstance.murmurList;
+	        }
+	        for (var _i = 0, murmurChildren_1 = murmurChildren; _i < murmurChildren_1.length; _i++) {
+	            var child = murmurChildren_1[_i];
+	            if (isMurmur(child)) {
+	                recursiveChilren.push(child);
+	                child.getRecursiveMurmurChildren(recursiveChilren);
+	            }
+	        }
+	        return recursiveChilren;
 	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
@@ -236,16 +259,6 @@
 	            murmurTree._loc = renderObj.loc;
 	            return murmurTree;
 	        } else if (renderObj.templateUrl) {
-	            // return fetch(renderObj.templateUrl).then(function (response) {
-	            //     return response.text()
-	            // }).then(function (body) {
-	            //     murmurTree = Murmur.convert(wxParser.parseStart(body, murmurRegex));
-	            //     murmurTree._loc = renderObj.loc;
-	            //     return murmurTree
-	            // }).then(murmurTree => {
-	            //     renderObj.ok && renderObj.ok(murmurTree);
-	            //     return murmurTree
-	            // })
 	            murmur_tool_1.ajax({
 	                url: renderObj.templateUrl,
 	                success: function (responseText) {
@@ -646,26 +659,29 @@
 	        if (repeatArr) {
 	            var repeatArrLength = repeatArr.length,
 	                mmListLength = this.murmurList.length;
-	            this.lengthCheck(repeatArr, murmur);
+	            this.lengthCheck(repeatArr, murmur, updateData);
 	            for (var i = 0; i < repeatArrLength; i++) {
 	                var repeatObj = repeatArr[i];
 	                var m = this.murmurList[i];
 	                if (m) {
 	                    m.$repeatDirective.repeatModel = repeatObj;
-	                    m.replaceRepeatModelOfChild(repeatObj);
+	                    for (var _i = 0, _a = m.getRecursiveMurmurChildren(); _i < _a.length; _i++) {
+	                        var deepChild = _a[_i];
+	                        deepChild.$repeatDirective.repeatModel = repeatObj;
+	                    }
 	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(repeatObj)));
 	                }
 	            }
 	        }
 	    };
-	    RepeatDirective.prototype.lengthCheck = function (repeatArr, murmur) {
+	    RepeatDirective.prototype.lengthCheck = function (repeatArr, murmur, updateData) {
 	        var repeatArrLength = repeatArr.length,
 	            mmListLength = this.murmurList.length;
 	        if (mmListLength > repeatArrLength) {
 	            this.removeExcessMurmur(mmListLength, repeatArrLength);
 	        }
 	        if (mmListLength < repeatArrLength) {
-	            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength);
+	            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength, updateData);
 	        }
 	    };
 	    RepeatDirective.prototype.removeExcessMurmur = function (mmListLength, repeatArrLength) {
@@ -674,7 +690,7 @@
 	            this.murmurList.pop();
 	        }
 	    };
-	    RepeatDirective.prototype.addExtraMurmur = function (repeatArr, murmur, mmListLength, repeatArrLength) {
+	    RepeatDirective.prototype.addExtraMurmur = function (repeatArr, murmur, mmListLength, repeatArrLength, updateData) {
 	        while (mmListLength < repeatArrLength) {
 	            var clone = murmur_core_1.default.clone(murmur),
 	                newDom = void 0,
@@ -682,6 +698,7 @@
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
 	            clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
+	            clone.updateModel = updateData;
 	            newDom = clone.create(murmur.model);
 	            lastDom = this.murmurList[mmListLength - 2]._connected.get();
 	            murmur_tool_1.addSibling(lastDom, newDom);
@@ -941,470 +958,6 @@
 	exports.NODESTART = 'NODESTART';
 	exports.NODEEND = 'NODEEND';
 	exports.NODECLOSESELF = 'NODECLOSESELF';
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-	(function(self) {
-	  'use strict';
-
-	  if (self.fetch) {
-	    return
-	  }
-
-	  var support = {
-	    searchParams: 'URLSearchParams' in self,
-	    iterable: 'Symbol' in self && 'iterator' in Symbol,
-	    blob: 'FileReader' in self && 'Blob' in self && (function() {
-	      try {
-	        new Blob()
-	        return true
-	      } catch(e) {
-	        return false
-	      }
-	    })(),
-	    formData: 'FormData' in self,
-	    arrayBuffer: 'ArrayBuffer' in self
-	  }
-
-	  if (support.arrayBuffer) {
-	    var viewClasses = [
-	      '[object Int8Array]',
-	      '[object Uint8Array]',
-	      '[object Uint8ClampedArray]',
-	      '[object Int16Array]',
-	      '[object Uint16Array]',
-	      '[object Int32Array]',
-	      '[object Uint32Array]',
-	      '[object Float32Array]',
-	      '[object Float64Array]'
-	    ]
-
-	    var isDataView = function(obj) {
-	      return obj && DataView.prototype.isPrototypeOf(obj)
-	    }
-
-	    var isArrayBufferView = ArrayBuffer.isView || function(obj) {
-	      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
-	    }
-	  }
-
-	  function normalizeName(name) {
-	    if (typeof name !== 'string') {
-	      name = String(name)
-	    }
-	    if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
-	      throw new TypeError('Invalid character in header field name')
-	    }
-	    return name.toLowerCase()
-	  }
-
-	  function normalizeValue(value) {
-	    if (typeof value !== 'string') {
-	      value = String(value)
-	    }
-	    return value
-	  }
-
-	  // Build a destructive iterator for the value list
-	  function iteratorFor(items) {
-	    var iterator = {
-	      next: function() {
-	        var value = items.shift()
-	        return {done: value === undefined, value: value}
-	      }
-	    }
-
-	    if (support.iterable) {
-	      iterator[Symbol.iterator] = function() {
-	        return iterator
-	      }
-	    }
-
-	    return iterator
-	  }
-
-	  function Headers(headers) {
-	    this.map = {}
-
-	    if (headers instanceof Headers) {
-	      headers.forEach(function(value, name) {
-	        this.append(name, value)
-	      }, this)
-
-	    } else if (headers) {
-	      Object.getOwnPropertyNames(headers).forEach(function(name) {
-	        this.append(name, headers[name])
-	      }, this)
-	    }
-	  }
-
-	  Headers.prototype.append = function(name, value) {
-	    name = normalizeName(name)
-	    value = normalizeValue(value)
-	    var oldValue = this.map[name]
-	    this.map[name] = oldValue ? oldValue+','+value : value
-	  }
-
-	  Headers.prototype['delete'] = function(name) {
-	    delete this.map[normalizeName(name)]
-	  }
-
-	  Headers.prototype.get = function(name) {
-	    name = normalizeName(name)
-	    return this.has(name) ? this.map[name] : null
-	  }
-
-	  Headers.prototype.has = function(name) {
-	    return this.map.hasOwnProperty(normalizeName(name))
-	  }
-
-	  Headers.prototype.set = function(name, value) {
-	    this.map[normalizeName(name)] = normalizeValue(value)
-	  }
-
-	  Headers.prototype.forEach = function(callback, thisArg) {
-	    for (var name in this.map) {
-	      if (this.map.hasOwnProperty(name)) {
-	        callback.call(thisArg, this.map[name], name, this)
-	      }
-	    }
-	  }
-
-	  Headers.prototype.keys = function() {
-	    var items = []
-	    this.forEach(function(value, name) { items.push(name) })
-	    return iteratorFor(items)
-	  }
-
-	  Headers.prototype.values = function() {
-	    var items = []
-	    this.forEach(function(value) { items.push(value) })
-	    return iteratorFor(items)
-	  }
-
-	  Headers.prototype.entries = function() {
-	    var items = []
-	    this.forEach(function(value, name) { items.push([name, value]) })
-	    return iteratorFor(items)
-	  }
-
-	  if (support.iterable) {
-	    Headers.prototype[Symbol.iterator] = Headers.prototype.entries
-	  }
-
-	  function consumed(body) {
-	    if (body.bodyUsed) {
-	      return Promise.reject(new TypeError('Already read'))
-	    }
-	    body.bodyUsed = true
-	  }
-
-	  function fileReaderReady(reader) {
-	    return new Promise(function(resolve, reject) {
-	      reader.onload = function() {
-	        resolve(reader.result)
-	      }
-	      reader.onerror = function() {
-	        reject(reader.error)
-	      }
-	    })
-	  }
-
-	  function readBlobAsArrayBuffer(blob) {
-	    var reader = new FileReader()
-	    var promise = fileReaderReady(reader)
-	    reader.readAsArrayBuffer(blob)
-	    return promise
-	  }
-
-	  function readBlobAsText(blob) {
-	    var reader = new FileReader()
-	    var promise = fileReaderReady(reader)
-	    reader.readAsText(blob)
-	    return promise
-	  }
-
-	  function readArrayBufferAsText(buf) {
-	    var view = new Uint8Array(buf)
-	    var chars = new Array(view.length)
-
-	    for (var i = 0; i < view.length; i++) {
-	      chars[i] = String.fromCharCode(view[i])
-	    }
-	    return chars.join('')
-	  }
-
-	  function bufferClone(buf) {
-	    if (buf.slice) {
-	      return buf.slice(0)
-	    } else {
-	      var view = new Uint8Array(buf.byteLength)
-	      view.set(new Uint8Array(buf))
-	      return view.buffer
-	    }
-	  }
-
-	  function Body() {
-	    this.bodyUsed = false
-
-	    this._initBody = function(body) {
-	      this._bodyInit = body
-	      if (!body) {
-	        this._bodyText = ''
-	      } else if (typeof body === 'string') {
-	        this._bodyText = body
-	      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
-	        this._bodyBlob = body
-	      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
-	        this._bodyFormData = body
-	      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-	        this._bodyText = body.toString()
-	      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
-	        this._bodyArrayBuffer = bufferClone(body.buffer)
-	        // IE 10-11 can't handle a DataView body.
-	        this._bodyInit = new Blob([this._bodyArrayBuffer])
-	      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
-	        this._bodyArrayBuffer = bufferClone(body)
-	      } else {
-	        throw new Error('unsupported BodyInit type')
-	      }
-
-	      if (!this.headers.get('content-type')) {
-	        if (typeof body === 'string') {
-	          this.headers.set('content-type', 'text/plain;charset=UTF-8')
-	        } else if (this._bodyBlob && this._bodyBlob.type) {
-	          this.headers.set('content-type', this._bodyBlob.type)
-	        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-	          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
-	        }
-	      }
-	    }
-
-	    if (support.blob) {
-	      this.blob = function() {
-	        var rejected = consumed(this)
-	        if (rejected) {
-	          return rejected
-	        }
-
-	        if (this._bodyBlob) {
-	          return Promise.resolve(this._bodyBlob)
-	        } else if (this._bodyArrayBuffer) {
-	          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
-	        } else if (this._bodyFormData) {
-	          throw new Error('could not read FormData body as blob')
-	        } else {
-	          return Promise.resolve(new Blob([this._bodyText]))
-	        }
-	      }
-
-	      this.arrayBuffer = function() {
-	        if (this._bodyArrayBuffer) {
-	          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
-	        } else {
-	          return this.blob().then(readBlobAsArrayBuffer)
-	        }
-	      }
-	    }
-
-	    this.text = function() {
-	      var rejected = consumed(this)
-	      if (rejected) {
-	        return rejected
-	      }
-
-	      if (this._bodyBlob) {
-	        return readBlobAsText(this._bodyBlob)
-	      } else if (this._bodyArrayBuffer) {
-	        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
-	      } else if (this._bodyFormData) {
-	        throw new Error('could not read FormData body as text')
-	      } else {
-	        return Promise.resolve(this._bodyText)
-	      }
-	    }
-
-	    if (support.formData) {
-	      this.formData = function() {
-	        return this.text().then(decode)
-	      }
-	    }
-
-	    this.json = function() {
-	      return this.text().then(JSON.parse)
-	    }
-
-	    return this
-	  }
-
-	  // HTTP methods whose capitalization should be normalized
-	  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
-
-	  function normalizeMethod(method) {
-	    var upcased = method.toUpperCase()
-	    return (methods.indexOf(upcased) > -1) ? upcased : method
-	  }
-
-	  function Request(input, options) {
-	    options = options || {}
-	    var body = options.body
-
-	    if (typeof input === 'string') {
-	      this.url = input
-	    } else {
-	      if (input.bodyUsed) {
-	        throw new TypeError('Already read')
-	      }
-	      this.url = input.url
-	      this.credentials = input.credentials
-	      if (!options.headers) {
-	        this.headers = new Headers(input.headers)
-	      }
-	      this.method = input.method
-	      this.mode = input.mode
-	      if (!body && input._bodyInit != null) {
-	        body = input._bodyInit
-	        input.bodyUsed = true
-	      }
-	    }
-
-	    this.credentials = options.credentials || this.credentials || 'omit'
-	    if (options.headers || !this.headers) {
-	      this.headers = new Headers(options.headers)
-	    }
-	    this.method = normalizeMethod(options.method || this.method || 'GET')
-	    this.mode = options.mode || this.mode || null
-	    this.referrer = null
-
-	    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
-	      throw new TypeError('Body not allowed for GET or HEAD requests')
-	    }
-	    this._initBody(body)
-	  }
-
-	  Request.prototype.clone = function() {
-	    return new Request(this, { body: this._bodyInit })
-	  }
-
-	  function decode(body) {
-	    var form = new FormData()
-	    body.trim().split('&').forEach(function(bytes) {
-	      if (bytes) {
-	        var split = bytes.split('=')
-	        var name = split.shift().replace(/\+/g, ' ')
-	        var value = split.join('=').replace(/\+/g, ' ')
-	        form.append(decodeURIComponent(name), decodeURIComponent(value))
-	      }
-	    })
-	    return form
-	  }
-
-	  function parseHeaders(rawHeaders) {
-	    var headers = new Headers()
-	    rawHeaders.split('\r\n').forEach(function(line) {
-	      var parts = line.split(':')
-	      var key = parts.shift().trim()
-	      if (key) {
-	        var value = parts.join(':').trim()
-	        headers.append(key, value)
-	      }
-	    })
-	    return headers
-	  }
-
-	  Body.call(Request.prototype)
-
-	  function Response(bodyInit, options) {
-	    if (!options) {
-	      options = {}
-	    }
-
-	    this.type = 'default'
-	    this.status = 'status' in options ? options.status : 200
-	    this.ok = this.status >= 200 && this.status < 300
-	    this.statusText = 'statusText' in options ? options.statusText : 'OK'
-	    this.headers = new Headers(options.headers)
-	    this.url = options.url || ''
-	    this._initBody(bodyInit)
-	  }
-
-	  Body.call(Response.prototype)
-
-	  Response.prototype.clone = function() {
-	    return new Response(this._bodyInit, {
-	      status: this.status,
-	      statusText: this.statusText,
-	      headers: new Headers(this.headers),
-	      url: this.url
-	    })
-	  }
-
-	  Response.error = function() {
-	    var response = new Response(null, {status: 0, statusText: ''})
-	    response.type = 'error'
-	    return response
-	  }
-
-	  var redirectStatuses = [301, 302, 303, 307, 308]
-
-	  Response.redirect = function(url, status) {
-	    if (redirectStatuses.indexOf(status) === -1) {
-	      throw new RangeError('Invalid status code')
-	    }
-
-	    return new Response(null, {status: status, headers: {location: url}})
-	  }
-
-	  self.Headers = Headers
-	  self.Request = Request
-	  self.Response = Response
-
-	  self.fetch = function(input, init) {
-	    return new Promise(function(resolve, reject) {
-	      var request = new Request(input, init)
-	      var xhr = new XMLHttpRequest()
-
-	      xhr.onload = function() {
-	        var options = {
-	          status: xhr.status,
-	          statusText: xhr.statusText,
-	          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
-	        }
-	        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL')
-	        var body = 'response' in xhr ? xhr.response : xhr.responseText
-	        resolve(new Response(body, options))
-	      }
-
-	      xhr.onerror = function() {
-	        reject(new TypeError('Network request failed'))
-	      }
-
-	      xhr.ontimeout = function() {
-	        reject(new TypeError('Network request failed'))
-	      }
-
-	      xhr.open(request.method, request.url, true)
-
-	      if (request.credentials === 'include') {
-	        xhr.withCredentials = true
-	      }
-
-	      if ('responseType' in xhr && support.blob) {
-	        xhr.responseType = 'blob'
-	      }
-
-	      request.headers.forEach(function(value, name) {
-	        xhr.setRequestHeader(name, value)
-	      })
-
-	      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
-	    })
-	  }
-	  self.fetch.polyfill = true
-	})(typeof self !== 'undefined' ? self : this);
 
 
 /***/ }

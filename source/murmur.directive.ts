@@ -37,25 +37,27 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
         let keysNeedToBeUpdate = Object.keys(updateData)
         if (repeatArr) {
             let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
-            this.lengthCheck(repeatArr, murmur)
+            this.lengthCheck(repeatArr, murmur, updateData)
             for (let i = 0; i < repeatArrLength; i++) {
                 let repeatObj = repeatArr[i];
                 let m = this.murmurList[i];
                 if (m) {
                     m.$repeatDirective.repeatModel = repeatObj;
-                    m.replaceRepeatModelOfChild(repeatObj);
+                    for (let deepChild of m.getRecursiveMurmurChildren()) {
+                        deepChild.$repeatDirective.repeatModel = repeatObj;
+                    }
                     m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(repeatObj)))
                 }
             }
         }
     }
-    lengthCheck(repeatArr: Array<any>, murmur: Murmur) {
+    lengthCheck(repeatArr: Array<any>, murmur: Murmur, updateData) {
         let repeatArrLength = repeatArr.length, mmListLength = this.murmurList.length;
         if (mmListLength > repeatArrLength) {
             this.removeExcessMurmur(mmListLength, repeatArrLength)
         }
         if (mmListLength < repeatArrLength) {
-            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength)
+            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength, updateData)
         }
     }
     removeExcessMurmur(mmListLength: number, repeatArrLength: number) {
@@ -64,12 +66,13 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
             this.murmurList.pop();
         }
     }
-    addExtraMurmur(repeatArr: any[], murmur: Murmur, mmListLength, repeatArrLength) {
+    addExtraMurmur(repeatArr: any[], murmur: Murmur, mmListLength, repeatArrLength, updateData) {
         while (mmListLength < repeatArrLength) {
             let clone = Murmur.clone(murmur), newDom, lastDom
             clone.$repeatDirective.$repeatEntrance = false;
             clone.$repeatDirective.$repeatEntity = true;
             clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
+            clone.updateModel=updateData;
             newDom = clone.create(murmur.model);
             lastDom = this.murmurList[mmListLength - 2]._connected.get();
             addSibling(lastDom, newDom);

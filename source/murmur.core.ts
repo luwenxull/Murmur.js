@@ -5,8 +5,6 @@ import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
 
-import "whatwg-fetch"
-
 export interface MurmurItf {
     nodeName: string,
     attr: { name: string, value: string }[]
@@ -34,6 +32,7 @@ export default class Murmur implements MurmurItf {
     public attr: { name: string, value: string }[]
     public children: Array<Murmur | string>
     public model: any
+    public updateModel: any = {}
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
@@ -60,7 +59,10 @@ export default class Murmur implements MurmurItf {
         }
     }
     update(updateObj) {
-        Object.assign(this.model, updateObj);
+        Object.assign(this.updateModel, updateObj);
+        for (let deepChild of this.getRecursiveMurmurChildren()) {
+            Object.assign(deepChild.updateModel, updateObj)
+        }
         this.dispatchUpdate(updateObj, Object.keys(updateObj));
     }
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
@@ -104,18 +106,32 @@ export default class Murmur implements MurmurItf {
     extract(field) {
         let repeatModel = this.$repeatDirective.repeatModel;
         if (removeAllSpace(field).indexOf(':') === 0) {
-            return repeatModel[field.slice(1)]
+            let ff = field.slice(1);
+            if (ff in this.updateModel) {
+                return this.updateModel[field.slice(1)]
+            } else {
+                return repeatModel[field.slice(1)]
+            }
         } else {
-            return this.model[field]
-        }
-    }
-    replaceRepeatModelOfChild(newModel) {
-        for (let child of this.children) {
-            if (isMurmur(child)) {
-                child.$repeatDirective.repeatModel = newModel;
-                child.replaceRepeatModelOfChild(newModel);
+            if (field in this.updateModel) {
+                return this.updateModel[field]
+            } else {
+                return this.model[field]
             }
         }
+    }
+    getRecursiveMurmurChildren(recursiveChilren = []): Murmur[] {
+        let murmurChildren = this.children;
+        if (this.$repeatDirective.repeatDInstance) {
+            murmurChildren = this.$repeatDirective.repeatDInstance.murmurList
+        }
+        for (let child of murmurChildren) {
+            if (isMurmur(child)) {
+                recursiveChilren.push(child);
+                child.getRecursiveMurmurChildren(recursiveChilren)
+            }
+        }
+        return recursiveChilren
     }
     static convert(obj): Murmur {
         if (obj.nodeName) {
@@ -151,7 +167,7 @@ export default class Murmur implements MurmurItf {
                 }
             })
 
-            return ()=>murmurTree
+            return () => murmurTree
         }
     }
 }
