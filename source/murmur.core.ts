@@ -31,9 +31,9 @@ export default class Murmur implements MurmurItf {
     public nodeName: string
     public attr: { name: string, value: string }[]
     public children: Array<Murmur | string>
-    public model: any
-    public updateModel: any = {}
-    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatModel, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null }
+    public primaryModel = null
+    public stateModel = null
+    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
@@ -45,9 +45,9 @@ export default class Murmur implements MurmurItf {
         this.children = children;
         this.murmurID = murmurID++;
     }
-    create(model = null): Node {
-        this.model = model;
-        this._connected = MurmurCreatorFactory().create(this, model);
+    create(primaryModel): Node {
+        this.primaryModel = primaryModel;
+        this._connected = MurmurCreatorFactory().create(this);
         return this._connected.dom
     }
     render(model) {
@@ -59,10 +59,7 @@ export default class Murmur implements MurmurItf {
         }
     }
     update(updateObj) {
-        Object.assign(this.updateModel, updateObj);
-        for (let deepChild of this.getRecursiveMurmurChildren()) {
-            Object.assign(deepChild.updateModel, updateObj)
-        }
+        this.stateModel=Object.assign({},this.stateModel||{}, updateObj);
         this.dispatchUpdate(updateObj, Object.keys(updateObj));
     }
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
@@ -73,6 +70,7 @@ export default class Murmur implements MurmurItf {
             this.doUpdate(updateObj, keysNeedToBeUpdate);
             for (let child of this.children) {
                 if (isMurmur(child)) {
+                    child.primaryModel=this.combineModelToChild()
                     child.dispatchUpdate(updateObj, keysNeedToBeUpdate)
                 }
             }
@@ -104,21 +102,17 @@ export default class Murmur implements MurmurItf {
         return copyVal
     }
     extract(field) {
-        let repeatModel = this.$repeatDirective.repeatModel;
         if (removeAllSpace(field).indexOf(':') === 0) {
-            let ff = field.slice(1);
-            if (ff in this.updateModel) {
-                return this.updateModel[field.slice(1)]
-            } else {
-                return repeatModel[field.slice(1)]
-            }
+            return this.primaryModel[field.slice(1)]
         } else {
-            if (field in this.updateModel) {
-                return this.updateModel[field]
-            } else {
-                return this.model[field]
-            }
+            return (this.stateModel || this.primaryModel)[field]
         }
+    }
+    combineModelToChild() {
+        if (this.stateModel) {
+            return Object.assign({}, this.primaryModel, this.stateModel)
+        }
+        return this.primaryModel
     }
     getRecursiveMurmurChildren(recursiveChilren = []): Murmur[] {
         let murmurChildren = this.children;

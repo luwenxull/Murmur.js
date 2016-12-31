@@ -12,7 +12,7 @@ window.app = Murmur.prepare({
             position: 'fe',
             location: "suzhou",
             click: function (murmur,e) {
-                murmur.update({src:'https://i.ytimg.com/vi/7UjBV8D4un8/hqdefault.jpg?custom=true&w=196&h=110&stc=true&jpg444=true&jpgq=90&sp=68&sigh=6AsWhNuO9Z3nCsJ_u9knxYu_Y9k'})
+                murmur.update({src:'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'})
             },
             click2:function(murmur,e){
                 murmur.update({location:'beijing',cn1:'green'})
@@ -20,6 +20,9 @@ window.app = Murmur.prepare({
             people: [{
                 age: 24,
                 show: true
+            },{
+                age:25,
+                show:false
             }]
         });
     }
