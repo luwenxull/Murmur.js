@@ -194,7 +194,11 @@
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
 	            return this.primaryModel[field.slice(1)];
 	        } else {
-	            return (this.stateModel || this.primaryModel)[field];
+	            if (this.stateModel && field in this.stateModel) {
+	                return (this.stateModel || this.primaryModel)[field];
+	            } else {
+	                return this.primaryModel[field];
+	            }
 	        }
 	    };
 	    Murmur.prototype.combineModelToChild = function () {

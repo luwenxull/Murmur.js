@@ -59,7 +59,7 @@ export default class Murmur implements MurmurItf {
         }
     }
     update(updateObj) {
-        this.stateModel=Object.assign({},this.stateModel||{}, updateObj);
+        this.stateModel = Object.assign({}, this.stateModel || {}, updateObj);
         this.dispatchUpdate(updateObj, Object.keys(updateObj));
     }
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
@@ -70,7 +70,7 @@ export default class Murmur implements MurmurItf {
             this.doUpdate(updateObj, keysNeedToBeUpdate);
             for (let child of this.children) {
                 if (isMurmur(child)) {
-                    child.primaryModel=this.combineModelToChild()
+                    child.primaryModel = this.combineModelToChild()
                     child.dispatchUpdate(updateObj, keysNeedToBeUpdate)
                 }
             }
@@ -105,7 +105,11 @@ export default class Murmur implements MurmurItf {
         if (removeAllSpace(field).indexOf(':') === 0) {
             return this.primaryModel[field.slice(1)]
         } else {
-            return (this.stateModel || this.primaryModel)[field]
+            if (this.stateModel && field in this.stateModel) {
+                return (this.stateModel || this.primaryModel)[field]
+            } else {
+                return this.primaryModel[field]
+            }
         }
     }
     combineModelToChild() {
