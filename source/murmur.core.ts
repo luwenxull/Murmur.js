@@ -4,7 +4,7 @@ import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax }
 import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
-
+import { MurmurManager } from "./murmur.manager"
 export interface MurmurItf {
     nodeName: string,
     attr: { name: string, value: string }[]
@@ -131,14 +131,15 @@ export default class Murmur implements MurmurItf {
         }
         return recursiveChilren
     }
+    
     static convert(obj): Murmur {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
             children = children.map(child => Murmur.convert(child));
-            return new Murmur(nodeName, attr, children);
-        } else {
-            return obj
+            let m = new Murmur(nodeName, attr, children);
+            return m
         }
+        return obj
     }
     static clone<T extends MurmurItf>(murmur: T) {
         if (murmur.nodeName) {
@@ -149,23 +150,20 @@ export default class Murmur implements MurmurItf {
             return murmur
         }
     }
-    static prepare(renderObj: renderItf) {
-        let murmurTree: Murmur;
+    static prepare(renderObj: renderItf, ready?) {
+        let murmurTree: Murmur=new Murmur('TEMP',[],[])
         if (renderObj.template) {
             murmurTree = Murmur.convert(wxParser.parseStart(renderObj.template, murmurRegex));
-            murmurTree._loc = renderObj.loc;
-            return murmurTree
+            murmurTree._loc = renderObj.loc
         } else if (renderObj.templateUrl) {
             ajax({
                 url: renderObj.templateUrl,
                 success: function (responseText) {
                     murmurTree = Murmur.convert(wxParser.parseStart(responseText, murmurRegex));
-                    murmurTree._loc = renderObj.loc;
-                    renderObj.ok && renderObj.ok(murmurTree);
+                    murmurTree._loc = renderObj.loc
                 }
             })
-
-            return () => murmurTree
         }
+        return new MurmurManager(murmurTree)
     }
 }

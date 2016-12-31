@@ -47,48 +47,52 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	window.app = Murmur.prepare({
 	    templateUrl: 'template.html',
-	    loc: 'app',
-	    ok: function (tree) {
-	        console.log(tree);
-	        tree.render({
-	            src: 'http://ggoer.com/favicon.ico',
-	            name: 'luwenxu',
-	            cn1: 'red',
-	            cn2: 'test',
-	            position: 'fe',
-	            location: "suzhou",
-	            click: function (murmur, e) {
-	                murmur.update({ src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg' });
-	            },
-	            click2: function (murmur, e) {
-	                murmur.update({ location: 'beijing', cn1: 'green' });
-	            },
-	            people: [{
-	                age: 24,
-	                show: true
-	            }, {
-	                age: 25,
-	                show: false
-	            }]
-	        });
-	    }
-	});
-
-	setTimeout(function () {
-	    app().update({
-	        cn1: 'blue',
+	    loc: 'app'
+	}, function (tree) {
+	    console.log(tree);
+	    tree.render({
+	        src: 'http://ggoer.com/favicon.ico',
+	        name: 'luwenxu',
+	        cn1: 'red',
+	        cn2: 'test',
+	        position: 'fe',
+	        location: "suzhou",
+	        click: function (murmur, e) {
+	            murmur.update({
+	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
+	            });
+	        },
+	        click2: function (murmur, e) {
+	            murmur.update({
+	                location: 'beijing',
+	                cn1: 'green'
+	            });
+	        },
 	        people: [{
-	            age: 30,
+	            age: 24,
 	            show: true
 	        }, {
-	            age: 26,
-	            show: true
-	        }, {
-	            age: 27,
-	            show: true
+	            age: 25,
+	            show: false
 	        }]
 	    });
-	}, 3000);
+	});
+
+	// setTimeout(function () {
+	//     app().update({
+	//         cn1: 'blue',
+	//         people: [{
+	//             age: 30,
+	//             show: true
+	//         }, {
+	//             age: 26,
+	//             show: true
+	//         }, {
+	//             age: 27,
+	//             show: true
+	//         }]
+	//     });
+	// }, 3000)
 
 /***/ },
 /* 1 */
@@ -224,7 +228,7 @@
 	        }
 	        return recursiveChilren;
 	    };
-	    Murmur.convert = function (obj) {
+	    Murmur.convert = function (obj, callback, renderObj) {
 	        if (obj.nodeName) {
 	            var nodeName = obj.nodeName,
 	                attr = obj.attr,
@@ -232,10 +236,14 @@
 	            children = children.map(function (child) {
 	                return Murmur.convert(child);
 	            });
-	            return new Murmur(nodeName, attr, children);
-	        } else {
-	            return obj;
+	            var m = new Murmur(nodeName, attr, children);
+	            if (callback) {
+	                m._loc = renderObj.loc;
+	                callback(m);
+	            }
+	            return m;
 	        }
+	        return obj;
 	    };
 	    Murmur.clone = function (murmur) {
 	        if (murmur.nodeName) {
@@ -250,25 +258,19 @@
 	            return murmur;
 	        }
 	    };
-	    Murmur.prepare = function (renderObj) {
+	    Murmur.prepare = function (renderObj, ready) {
 	        var murmurTree;
 	        if (renderObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
-	            murmurTree._loc = renderObj.loc;
-	            return murmurTree;
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex), ready, renderObj);
 	        } else if (renderObj.templateUrl) {
 	            murmur_tool_1.ajax({
 	                url: renderObj.templateUrl,
 	                success: function (responseText) {
-	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex));
-	                    murmurTree._loc = renderObj.loc;
-	                    renderObj.ok && renderObj.ok(murmurTree);
+	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex), ready, renderObj);
 	                }
 	            });
-	            return function () {
-	                return murmurTree;
-	            };
 	        }
+	        // return new MurmurManager(murmurTree)
 	    };
 	    return Murmur;
 	}();
