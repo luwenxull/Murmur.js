@@ -37,6 +37,7 @@ export default class Murmur implements MurmurItf {
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
+    public refClue:string
     public $directives: MurmurDirectiveItf[] = []
     public murmurID: number
     constructor(tagName, attr, children) {
@@ -118,20 +119,28 @@ export default class Murmur implements MurmurItf {
         }
         return this.primaryModel
     }
-    getRecursiveMurmurChildren(recursiveChilren = []): Murmur[] {
+    iterateChildren(ifBreak):Murmur{
+        if(ifBreak(this)){
+            return this
+        }
         let murmurChildren = this.children;
         if (this.$repeatDirective.repeatDInstance) {
             murmurChildren = this.$repeatDirective.repeatDInstance.murmurList
         }
         for (let child of murmurChildren) {
             if (isMurmur(child)) {
-                recursiveChilren.push(child);
-                child.getRecursiveMurmurChildren(recursiveChilren)
+                if(ifBreak(child)){
+                    return child
+                }
+                return child.iterateChildren(ifBreak)
             }
         }
-        return recursiveChilren
+        // return this
     }
-
+    ref(ref:string){
+        let fn=murmur=>murmur.refClue===ref;
+        this.iterateChildren(fn)
+    }
     static convert(obj): Murmur {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;

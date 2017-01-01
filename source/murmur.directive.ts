@@ -106,3 +106,11 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
         }
     }
 }
+
+export class RefDirective extends MurmurDirective implements MurmurDirectiveItf{
+    compile(murmur: Murmur, domGenerated: HTMLElement): Node {
+        murmur.refClue=this.directiveExpression;
+        return domGenerated
+    }
+    update(){}
+}

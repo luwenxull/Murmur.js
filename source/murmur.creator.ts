@@ -29,18 +29,13 @@ class MurmurCreator {
         for (let attr of murmur.attr) {
             let {name, value} = attr;
             if (name == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
-                let directive: MurmurDirectives.RepeatDirective = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
-                murmur.$directives.push(directive);
-                murmur.$repeatDirective.repeatDInstance = directive;
-                return directive.compile(murmur, domGenerated)
+                return this.compileRepeat(murmur, domGenerated, name, value)
             }
         }
         for (let attr of murmur.attr) {
             let {name, value} = attr;
             if (name !== "mm-repeat" && MurmurDirectiveTypes[name]) {
-                let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
-                murmur.$directives.push(directive);
-                directive.compile(murmur, domGenerated)
+                this.compileNormal(murmur, domGenerated, name, value)
             }
             if (name in MurmurEventTypes) {
                 let eventName = name.split('-')[1],
@@ -51,6 +46,17 @@ class MurmurCreator {
             }
         }
         return null
+    }
+    compileRepeat(murmur: Murmur, domGenerated: Node, name, value) {
+        let directive: MurmurDirectives.RepeatDirective = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
+        murmur.$directives.push(directive);
+        murmur.$repeatDirective.repeatDInstance = directive;
+        return directive.compile(murmur, domGenerated)
+    }
+    compileNormal(murmur: Murmur, domGenerated: Node, name, value) {
+        let directive: MurmurDirectives.MurmurDirectiveItf = new MurmurDirectives[MurmurDirectiveTypes[name].directive](value);
+        murmur.$directives.push(directive);
+        directive.compile(murmur, domGenerated)
     }
     attachAttr(dom: HTMLElement, murmur: Murmur): void {
         for (let a of murmur.attr) {

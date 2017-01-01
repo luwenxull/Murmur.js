@@ -9,7 +9,8 @@ export enum MurmurFieldType { ATTR, TEXT }
 
 export let MurmurDirectiveTypes = {
     "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
-    "mm-if": { name: "mm-if", directive: "IfDirective" }
+    "mm-if": { name: "mm-if", directive: "IfDirective" },
+    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' }
 }
 
 export enum MurmurConnectTypes { "DOM", "DIRECTIVE" }

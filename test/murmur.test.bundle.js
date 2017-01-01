@@ -47,7 +47,7 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	window.app = Murmur.prepare({
 	    templateUrl: 'template.html',
-	    template: '<div>{name}</div>',
+	    // template: '<div>{name}</div>',
 	    loc: 'app'
 	}).then(function (tree) {
 	    console.log(tree);
@@ -213,7 +213,7 @@
 	        }
 	        return this.primaryModel;
 	    };
-	    Murmur.prototype.getRecursiveMurmurChildren = function (recursiveChilren) {
+	    Murmur.prototype.iterateChildren = function (recursiveChilren) {
 	        if (recursiveChilren === void 0) {
 	            recursiveChilren = [];
 	        }
@@ -225,11 +225,12 @@
 	            var child = murmurChildren_1[_i];
 	            if (isMurmur(child)) {
 	                recursiveChilren.push(child);
-	                child.getRecursiveMurmurChildren(recursiveChilren);
+	                child.iterateChildren(recursiveChilren);
 	            }
 	        }
 	        return recursiveChilren;
 	    };
+	    Murmur.prototype.ref = function (ref) {};
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
 	            var nodeName = obj.nodeName,
@@ -317,19 +318,14 @@
 	            var name_1 = attr.name,
 	                value = attr.value;
 	            if (name_1 == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_1].directive](value);
-	                murmur.$directives.push(directive);
-	                murmur.$repeatDirective.repeatDInstance = directive;
-	                return directive.compile(murmur, domGenerated);
+	                return this.compileRepeat(murmur, domGenerated, name_1, value);
 	            }
 	        }
 	        var _loop_1 = function (attr) {
 	            var name_2 = attr.name,
 	                value = attr.value;
 	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypes[name_2]) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_2].directive](value);
-	                murmur.$directives.push(directive);
-	                directive.compile(murmur, domGenerated);
+	                this_1.compileNormal(murmur, domGenerated, name_2, value);
 	            }
 	            if (name_2 in murmur_type_1.MurmurEventTypes) {
 	                var eventName = name_2.split('-')[1],
@@ -339,11 +335,23 @@
 	                });
 	            }
 	        };
+	        var this_1 = this;
 	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
 	            var attr = _c[_b];
 	            _loop_1(attr);
 	        }
 	        return null;
+	    };
+	    MurmurCreator.prototype.compileRepeat = function (murmur, domGenerated, name, value) {
+	        var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name].directive](value);
+	        murmur.$directives.push(directive);
+	        murmur.$repeatDirective.repeatDInstance = directive;
+	        return directive.compile(murmur, domGenerated);
+	    };
+	    MurmurCreator.prototype.compileNormal = function (murmur, domGenerated, name, value) {
+	        var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name].directive](value);
+	        murmur.$directives.push(directive);
+	        directive.compile(murmur, domGenerated);
 	    };
 	    MurmurCreator.prototype.attachAttr = function (dom, murmur) {
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
@@ -594,7 +602,8 @@
 	})(MurmurFieldType = exports.MurmurFieldType || (exports.MurmurFieldType = {}));
 	exports.MurmurDirectiveTypes = {
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
-	    "mm-if": { name: "mm-if", directive: "IfDirective" }
+	    "mm-if": { name: "mm-if", directive: "IfDirective" },
+	    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' }
 	};
 	var MurmurConnectTypes;
 	(function (MurmurConnectTypes) {
@@ -747,6 +756,19 @@
 	    return IfDirective;
 	}(MurmurDirective);
 	exports.IfDirective = IfDirective;
+	var RefDirective = function (_super) {
+	    __extends(RefDirective, _super);
+	    function RefDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    RefDirective.prototype.compile = function (murmur, domGenerated) {
+	        murmur.refValue = this.directiveExpression;
+	        return domGenerated;
+	    };
+	    RefDirective.prototype.update = function () {};
+	    return RefDirective;
+	}(MurmurDirective);
+	exports.RefDirective = RefDirective;
 
 /***/ },
 /* 8 */

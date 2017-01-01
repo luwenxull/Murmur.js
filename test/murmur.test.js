@@ -1,7 +1,7 @@
 let Murmur = require('../Murmur').Murmur
 window.app = Murmur.prepare({
     templateUrl: 'template.html',
-    template: '<div>{name}</div>',
+    // template: '<div>{name}</div>',
     loc: 'app',
 }).then(function (tree) {
     console.log(tree);
