@@ -1,8 +1,9 @@
 let Murmur = require('../Murmur').Murmur
 window.app = Murmur.prepare({
     templateUrl: 'template.html',
+    template: '<div>{name}</div>',
     loc: 'app',
-}, function (tree) {
+}).then(function (tree) {
     console.log(tree);
     tree.render({
         src: 'http://ggoer.com/favicon.ico',

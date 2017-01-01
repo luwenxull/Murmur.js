@@ -15,3 +15,5 @@ export let MurmurDirectiveTypes = {
 export enum MurmurConnectTypes { "DOM", "DIRECTIVE" }
 
 export enum MurmurEventTypes { "mm-click" }
+
+export enum MurmurPromiseType { 'PENDING', 'RESOLVED', 'REJECTED' }

@@ -4,7 +4,7 @@ import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax }
 import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
-import { MurmurManager } from "./murmur.manager"
+import { MurmurPromise } from "./murmur.promise"
 export interface MurmurItf {
     nodeName: string,
     attr: { name: string, value: string }[]
@@ -131,7 +131,7 @@ export default class Murmur implements MurmurItf {
         }
         return recursiveChilren
     }
-    
+
     static convert(obj): Murmur {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
@@ -146,24 +146,26 @@ export default class Murmur implements MurmurItf {
             let {nodeName, attr, children} = murmur;
             children = children.map(child => Murmur.clone(<Murmur>child));
             return new Murmur(nodeName, attr, children);
-        } else {
-            return murmur
         }
+        return murmur
     }
     static prepare(renderObj: renderItf, ready?) {
-        let murmurTree: Murmur=new Murmur('TEMP',[],[])
+        let murmurTree: Murmur;
+        let murmurPromise = new MurmurPromise();
         if (renderObj.template) {
             murmurTree = Murmur.convert(wxParser.parseStart(renderObj.template, murmurRegex));
-            murmurTree._loc = renderObj.loc
+            murmurTree._loc = renderObj.loc;
+            murmurPromise.resolve(murmurTree);
         } else if (renderObj.templateUrl) {
             ajax({
                 url: renderObj.templateUrl,
                 success: function (responseText) {
                     murmurTree = Murmur.convert(wxParser.parseStart(responseText, murmurRegex));
-                    murmurTree._loc = renderObj.loc
+                    murmurTree._loc = renderObj.loc;
+                    murmurPromise.resolve(murmurTree);
                 }
             })
         }
-        return new MurmurManager(murmurTree)
+        return murmurPromise
     }
 }

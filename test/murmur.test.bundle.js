@@ -47,8 +47,9 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	window.app = Murmur.prepare({
 	    templateUrl: 'template.html',
+	    template: '<div>{name}</div>',
 	    loc: 'app'
-	}, function (tree) {
+	}).then(function (tree) {
 	    console.log(tree);
 	    tree.render({
 	        src: 'http://ggoer.com/favicon.ico',
@@ -116,6 +117,7 @@
 	var murmur_field_1 = __webpack_require__(9);
 	var murmur_tool_1 = __webpack_require__(4);
 	var wx_parser_1 = __webpack_require__(10);
+	var murmur_promise_1 = __webpack_require__(14);
 	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
@@ -228,7 +230,7 @@
 	        }
 	        return recursiveChilren;
 	    };
-	    Murmur.convert = function (obj, callback, renderObj) {
+	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
 	            var nodeName = obj.nodeName,
 	                attr = obj.attr,
@@ -237,10 +239,6 @@
 	                return Murmur.convert(child);
 	            });
 	            var m = new Murmur(nodeName, attr, children);
-	            if (callback) {
-	                m._loc = renderObj.loc;
-	                callback(m);
-	            }
 	            return m;
 	        }
 	        return obj;
@@ -254,23 +252,27 @@
 	                return Murmur.clone(child);
 	            });
 	            return new Murmur(nodeName, attr, children);
-	        } else {
-	            return murmur;
 	        }
+	        return murmur;
 	    };
 	    Murmur.prepare = function (renderObj, ready) {
 	        var murmurTree;
+	        var murmurPromise = new murmur_promise_1.MurmurPromise();
 	        if (renderObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex), ready, renderObj);
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
+	            murmurTree._loc = renderObj.loc;
+	            murmurPromise.resolve(murmurTree);
 	        } else if (renderObj.templateUrl) {
 	            murmur_tool_1.ajax({
 	                url: renderObj.templateUrl,
 	                success: function (responseText) {
-	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex), ready, renderObj);
+	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex));
+	                    murmurTree._loc = renderObj.loc;
+	                    murmurPromise.resolve(murmurTree);
 	                }
 	            });
 	        }
-	        // return new MurmurManager(murmurTree)
+	        return murmurPromise;
 	    };
 	    return Murmur;
 	}();
@@ -603,6 +605,12 @@
 	(function (MurmurEventTypes) {
 	    MurmurEventTypes[MurmurEventTypes["mm-click"] = 0] = "mm-click";
 	})(MurmurEventTypes = exports.MurmurEventTypes || (exports.MurmurEventTypes = {}));
+	var MurmurPromiseType;
+	(function (MurmurPromiseType) {
+	    MurmurPromiseType[MurmurPromiseType["PENDING"] = 0] = "PENDING";
+	    MurmurPromiseType[MurmurPromiseType["RESOLVED"] = 1] = "RESOLVED";
+	    MurmurPromiseType[MurmurPromiseType["REJECTED"] = 2] = "REJECTED";
+	})(MurmurPromiseType = exports.MurmurPromiseType || (exports.MurmurPromiseType = {}));
 
 /***/ },
 /* 7 */
@@ -966,6 +974,36 @@
 	exports.NODEEND = 'NODEEND';
 	exports.NODECLOSESELF = 'NODECLOSESELF';
 
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var murmur_type_1 = __webpack_require__(6);
+	var MurmurPromise = function () {
+	    function MurmurPromise() {
+	        this.success = [];
+	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
+	    }
+	    MurmurPromise.prototype.then = function (fn) {
+	        this.success.push(fn);
+	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	            fn(this.murmur);
+	        }
+	    };
+	    MurmurPromise.prototype.resolve = function (murmur) {
+	        this.status = murmur_type_1.MurmurPromiseType.RESOLVED;
+	        this.murmur = murmur;
+	        for (var _i = 0, _a = this.success; _i < _a.length; _i++) {
+	            var success = _a[_i];
+	            success(murmur);
+	        }
+	    };
+	    return MurmurPromise;
+	}();
+	exports.MurmurPromise = MurmurPromise;
 
 /***/ }
 /******/ ]);
