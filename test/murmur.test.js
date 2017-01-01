@@ -1,10 +1,11 @@
 let Murmur = require('../Murmur').Murmur
-window.app = Murmur.prepare({
-    templateUrl: 'template.html',
-    // template: '<div>{name}</div>',
+let app = Murmur.prepare({
+    // templateUrl: 'template.html',
+    template: '<div>{name}</div><img mm-ref="img"/>',
     loc: 'app',
-}).then(function (tree) {
-    console.log(tree);
+})/*.then(function (tree) {
+    tree.ref('img')
+}).then(function(){
     tree.render({
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
@@ -31,9 +32,18 @@ window.app = Murmur.prepare({
             show: false
         }]
     });
+})*/
+
+let footer=Murmur.prepare({
+    template:'<footer>this is footer</footer>'
 })
 
-
+app.then(function(app){
+    app.ref('img').replaceWith(footer);
+    // app.ref('img').append(footer);
+}).then(function(app){
+    app.render({name:'luwenxu'})
+})
 // setTimeout(function () {
 //     app().update({
 //         cn1: 'blue',

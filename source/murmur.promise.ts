@@ -9,7 +9,8 @@ export class MurmurPromise {
         this.success.push(fn);
         if(this.status===MurmurPromiseType.RESOLVED){
             fn(this.murmur)
-        }
+        };
+        return this
     }
     resolve(murmur: Murmur) {
         this.status=MurmurPromiseType.RESOLVED;

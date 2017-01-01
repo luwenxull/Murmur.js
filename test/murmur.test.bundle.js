@@ -45,40 +45,51 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	let Murmur = __webpack_require__(1).Murmur;
-	window.app = Murmur.prepare({
-	    templateUrl: 'template.html',
-	    // template: '<div>{name}</div>',
+	let app = Murmur.prepare({
+	    // templateUrl: 'template.html',
+	    template: '<div>{name}</div><img mm-ref="img"/>',
 	    loc: 'app'
-	}).then(function (tree) {
-	    console.log(tree);
-	    tree.render({
-	        src: 'http://ggoer.com/favicon.ico',
-	        name: 'luwenxu',
-	        cn1: 'red',
-	        cn2: 'test',
-	        position: 'fe',
-	        location: "suzhou",
-	        click: function (murmur, e) {
-	            murmur.update({
-	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
-	            });
-	        },
-	        click2: function (murmur, e) {
-	            murmur.update({
-	                location: 'beijing',
-	                cn1: 'green'
-	            });
-	        },
-	        people: [{
-	            age: 24,
-	            show: true
-	        }, {
-	            age: 25,
-	            show: false
-	        }]
-	    });
+	}); /*.then(function (tree) {
+	      tree.ref('img')
+	    }).then(function(){
+	      tree.render({
+	          src: 'http://ggoer.com/favicon.ico',
+	          name: 'luwenxu',
+	          cn1: 'red',
+	          cn2: 'test',
+	          position: 'fe',
+	          location: "suzhou",
+	          click: function (murmur, e) {
+	              murmur.update({
+	                  src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
+	              })
+	          },
+	          click2: function (murmur, e) {
+	              murmur.update({
+	                  location: 'beijing',
+	                  cn1: 'green'
+	              })
+	          },
+	          people: [{
+	              age: 24,
+	              show: true
+	          }, {
+	              age: 25,
+	              show: false
+	          }]
+	      });
+	    })*/
+
+	let footer = Murmur.prepare({
+	    template: '<footer>this is footer</footer>'
 	});
 
+	app.then(function (app) {
+	    app.ref('img').replaceWith(footer);
+	    // app.ref('img').append(footer);
+	}).then(function (app) {
+	    app.render({ name: 'luwenxu' });
+	});
 	// setTimeout(function () {
 	//     app().update({
 	//         cn1: 'blue',
@@ -213,24 +224,47 @@
 	        }
 	        return this.primaryModel;
 	    };
-	    Murmur.prototype.iterateChildren = function (recursiveChilren) {
-	        if (recursiveChilren === void 0) {
-	            recursiveChilren = [];
+	    Murmur.prototype.iterateChildren = function (ifBreak) {
+	        if (ifBreak(this)) {
+	            return this;
 	        }
 	        var murmurChildren = this.children;
+	        var result;
 	        if (this.$repeatDirective.repeatDInstance) {
 	            murmurChildren = this.$repeatDirective.repeatDInstance.murmurList;
 	        }
 	        for (var _i = 0, murmurChildren_1 = murmurChildren; _i < murmurChildren_1.length; _i++) {
 	            var child = murmurChildren_1[_i];
 	            if (isMurmur(child)) {
-	                recursiveChilren.push(child);
-	                child.iterateChildren(recursiveChilren);
+	                if (ifBreak(child)) {
+	                    return child;
+	                }
+	                if (result = child.iterateChildren(ifBreak)) {
+	                    return result;
+	                }
 	            }
 	        }
-	        return recursiveChilren;
+	        return result;
 	    };
-	    Murmur.prototype.ref = function (ref) {};
+	    Murmur.prototype.ref = function (ref) {
+	        var fn = function (murmur) {
+	            return murmur.refClue === ref;
+	        };
+	        var refMurmur = this.iterateChildren(fn);
+	        console.log(refMurmur);
+	        return refMurmur;
+	    };
+	    Murmur.prototype.replaceWith = function (murmurPromise) {
+	        var _this = this;
+	        murmurPromise.then(function (murmurFromPromise) {
+	            _this.simpleClone(murmurFromPromise);
+	        });
+	    };
+	    Murmur.prototype.simpleClone = function (source) {
+	        this.children = source.children;
+	        this.attr = source.attr;
+	        this.nodeName = source.nodeName;
+	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
 	            var nodeName = obj.nodeName,
@@ -762,7 +796,7 @@
 	        return _super.apply(this, arguments) || this;
 	    }
 	    RefDirective.prototype.compile = function (murmur, domGenerated) {
-	        murmur.refValue = this.directiveExpression;
+	        murmur.refClue = this.directiveExpression;
 	        return domGenerated;
 	    };
 	    RefDirective.prototype.update = function () {};
@@ -1014,6 +1048,8 @@
 	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
 	            fn(this.murmur);
 	        }
+	        ;
+	        return this;
 	    };
 	    MurmurPromise.prototype.resolve = function (murmur) {
 	        this.status = murmur_type_1.MurmurPromiseType.RESOLVED;

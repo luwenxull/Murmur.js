@@ -124,6 +124,7 @@ export default class Murmur implements MurmurItf {
             return this
         }
         let murmurChildren = this.children;
+        let result;
         if (this.$repeatDirective.repeatDInstance) {
             murmurChildren = this.$repeatDirective.repeatDInstance.murmurList
         }
@@ -132,14 +133,28 @@ export default class Murmur implements MurmurItf {
                 if(ifBreak(child)){
                     return child
                 }
-                return child.iterateChildren(ifBreak)
+                if(result=child.iterateChildren(ifBreak)){
+                    return result
+                }
             }
         }
-        // return this
+        return result
     }
     ref(ref:string){
         let fn=murmur=>murmur.refClue===ref;
-        this.iterateChildren(fn)
+        let refMurmur=this.iterateChildren(fn);
+        console.log(refMurmur);
+        return refMurmur
+    }
+    replaceWith(murmurPromise:MurmurPromise){
+        murmurPromise.then((murmurFromPromise)=>{
+            this.simpleClone(murmurFromPromise)
+        })
+    }
+    simpleClone(source:Murmur){
+        this.children=source.children;
+        this.attr=source.attr;
+        this.nodeName=source.nodeName;
     }
     static convert(obj): Murmur {
         if (obj.nodeName) {
