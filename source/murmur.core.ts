@@ -41,7 +41,8 @@ export default class Murmur implements MurmurItf {
     public refClue: string
     public $directives: MurmurDirectiveItf[] = []
     public murmurID: number
-    public waitPromiseManager: { promises: MurmurPromise[], waitCount: number, waitClear: boolean } = { promises: [], waitCount: 0, waitClear: true }
+    // public waitPromiseManager: { promises: MurmurPromise[], waitCount: number, waitClear: boolean } = { promises: [], waitCount: 0, waitClear: true }
+    public waitPromise: MurmurPromise = null;
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;
@@ -59,20 +60,29 @@ export default class Murmur implements MurmurItf {
             let root = this.create(model);
             let childNodes = root.childNodes;
             let loc = document.getElementById(this._loc);
-            for (let i = 0; i < childNodes.length; i++) {
-                loc.appendChild(childNodes[i])
+            let childNodesArr=Array.prototype.slice.call(childNodes,0)
+            // for (let i = 0; i < childNodes.length;) {
+            //     loc.appendChild(childNodes[i])
+            // }
+            for(let child of childNodesArr){
+                loc.appendChild(child)
             }
         })
     }
     getAllNotResolved(notResolvedPromise: MurmurPromise[] = []) {
-        let {waitPromiseManager} = this;
-        let {waitClear, promises} = waitPromiseManager;
-        for (let promise of promises) {
-            if (promise.status === MurmurPromiseType.PENDING) {
-                notResolvedPromise.push(promise)
+        let waitPromise = this.waitPromise;
+        if (waitPromise) {
+            if (waitPromise.status === MurmurPromiseType.PENDING) {
+                notResolvedPromise.push(waitPromise)
             }
-            if (promise.status === MurmurPromiseType.RESOLVED) {
-                promise.murmur.getAllNotResolved(notResolvedPromise)
+            if (waitPromise.status === MurmurPromiseType.RESOLVED) {
+                waitPromise.murmur.getAllNotResolved(notResolvedPromise)
+            }
+        }
+
+        for (let child of this.children) {
+            if (isMurmur(child)) {
+                child.getAllNotResolved(notResolvedPromise)
             }
         }
         return notResolvedPromise
@@ -180,16 +190,9 @@ export default class Murmur implements MurmurItf {
         console.log(refMurmur);
         return refMurmur
     }
-    replaceWith(murmurPromise: MurmurPromise) {
-        let waitPromiseManager = this.waitPromiseManager;
-        waitPromiseManager.waitCount++;
-        waitPromiseManager.waitClear = false;
-        waitPromiseManager.promises.push(murmurPromise)
+    refTo(murmurPromise: MurmurPromise) {
+        this.waitPromise = murmurPromise
         murmurPromise.then(() => {
-            waitPromiseManager.waitCount--;
-            if (waitPromiseManager.waitCount === 0) {
-                waitPromiseManager.waitClear = true;
-            }
             this.simpleClone(murmurPromise);
         })
     }
@@ -204,6 +207,9 @@ export default class Murmur implements MurmurItf {
             let {nodeName, attr, children} = obj;
             children = children.map(child => Murmur.convert(child));
             let m = new Murmur(nodeName, attr, children);
+            for (let a of attr) {
+                if (a.name == 'mm-ref') m.refClue = a.value
+            }
             return m
         }
         return obj
