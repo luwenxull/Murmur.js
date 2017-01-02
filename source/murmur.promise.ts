@@ -3,7 +3,8 @@ import { MurmurPromiseType } from "./murmur.type"
 export class MurmurPromise {
     public success: Array<(murmur: Murmur) => void> = []
     public status: number = MurmurPromiseType.PENDING
-    private murmur:Murmur
+    public murmur:Murmur
+    public resolveNotify:boolean=false;
     constructor() { }
     then(fn) {
         this.success.push(fn);

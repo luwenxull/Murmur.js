@@ -35,11 +35,11 @@ let app = Murmur.prepare({
 })*/
 
 let footer=Murmur.prepare({
-    template:'<footer>this is footer</footer>'
+    templateUrl:'footer.html'
 })
 
 app.then(function(app){
-    app.ref('img').replaceWith(footer);
+    app.replaceWith(footer);
     // app.ref('img').append(footer);
 }).then(function(app){
     app.render({name:'luwenxu'})

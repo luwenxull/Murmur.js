@@ -81,11 +81,11 @@
 	    })*/
 
 	let footer = Murmur.prepare({
-	    template: '<footer>this is footer</footer>'
+	    templateUrl: 'footer.html'
 	});
 
 	app.then(function (app) {
-	    app.ref('img').replaceWith(footer);
+	    app.replaceWith(footer);
 	    // app.ref('img').append(footer);
 	}).then(function (app) {
 	    app.render({ name: 'luwenxu' });
@@ -129,6 +129,7 @@
 	var murmur_tool_1 = __webpack_require__(4);
 	var wx_parser_1 = __webpack_require__(10);
 	var murmur_promise_1 = __webpack_require__(14);
+	var murmur_type_1 = __webpack_require__(6);
 	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
@@ -142,6 +143,7 @@
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this._fields = {};
 	        this.$directives = [];
+	        this.waitPromiseManager = { promises: [], waitCount: 0, waitClear: true };
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -153,11 +155,51 @@
 	        return this._connected.dom;
 	    };
 	    Murmur.prototype.render = function (model) {
-	        var root = this.create(model);
-	        var childNodes = root.childNodes;
-	        var loc = document.getElementById(this._loc);
-	        for (var i = 0; i < childNodes.length; i++) {
-	            loc.appendChild(childNodes[i]);
+	        var _this = this;
+	        var notResolvedPromise = this.getAllNotResolved();
+	        this.handleNotResolved(notResolvedPromise, function () {
+	            var root = _this.create(model);
+	            var childNodes = root.childNodes;
+	            var loc = document.getElementById(_this._loc);
+	            for (var i = 0; i < childNodes.length; i++) {
+	                loc.appendChild(childNodes[i]);
+	            }
+	        });
+	    };
+	    Murmur.prototype.getAllNotResolved = function (notResolvedPromise) {
+	        if (notResolvedPromise === void 0) {
+	            notResolvedPromise = [];
+	        }
+	        var waitPromiseManager = this.waitPromiseManager;
+	        var waitClear = waitPromiseManager.waitClear,
+	            promises = waitPromiseManager.promises;
+	        for (var _i = 0, promises_1 = promises; _i < promises_1.length; _i++) {
+	            var promise = promises_1[_i];
+	            if (promise.status === murmur_type_1.MurmurPromiseType.PENDING) {
+	                notResolvedPromise.push(promise);
+	            }
+	            if (promise.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	                promise.murmur.getAllNotResolved(notResolvedPromise);
+	            }
+	        }
+	        return notResolvedPromise;
+	    };
+	    Murmur.prototype.handleNotResolved = function (notResolvedPromise, callback) {
+	        var _this = this;
+	        var allResolved = true;
+	        for (var _i = 0, notResolvedPromise_1 = notResolvedPromise; _i < notResolvedPromise_1.length; _i++) {
+	            var nrp = notResolvedPromise_1[_i];
+	            if (nrp.status === murmur_type_1.MurmurPromiseType.PENDING && !nrp.resolveNotify) {
+	                nrp.resolveNotify = true;
+	                nrp.then(function (murmur) {
+	                    notResolvedPromise = notResolvedPromise.concat(murmur.getAllNotResolved());
+	                    _this.handleNotResolved(notResolvedPromise, callback);
+	                });
+	                allResolved = false;
+	            }
+	        }
+	        if (allResolved) {
+	            callback();
 	        }
 	    };
 	    Murmur.prototype.update = function (updateObj) {
@@ -256,11 +298,20 @@
 	    };
 	    Murmur.prototype.replaceWith = function (murmurPromise) {
 	        var _this = this;
-	        murmurPromise.then(function (murmurFromPromise) {
-	            _this.simpleClone(murmurFromPromise);
+	        var waitPromiseManager = this.waitPromiseManager;
+	        waitPromiseManager.waitCount++;
+	        waitPromiseManager.waitClear = false;
+	        waitPromiseManager.promises.push(murmurPromise);
+	        murmurPromise.then(function () {
+	            waitPromiseManager.waitCount--;
+	            if (waitPromiseManager.waitCount === 0) {
+	                waitPromiseManager.waitClear = true;
+	            }
+	            _this.simpleClone(murmurPromise);
 	        });
 	    };
-	    Murmur.prototype.simpleClone = function (source) {
+	    Murmur.prototype.simpleClone = function (promise) {
+	        var source = promise.murmur;
 	        this.children = source.children;
 	        this.attr = source.attr;
 	        this.nodeName = source.nodeName;
@@ -1042,6 +1093,7 @@
 	    function MurmurPromise() {
 	        this.success = [];
 	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
+	        this.resolveNotify = false;
 	    }
 	    MurmurPromise.prototype.then = function (fn) {
 	        this.success.push(fn);
