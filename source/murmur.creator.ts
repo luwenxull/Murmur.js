@@ -68,7 +68,6 @@ class MurmurCreator {
     appendChildren(parent: HTMLElement, murmur: Murmur): void {
         for (let child of murmur.children) {
             child = <Murmur>child;
-            // child.$repeatDirective.repeatModel = murmur.$repeatDirective.repeatModel
             parent.appendChild(child.create(murmur.combineModelToChild()))
         }
     }

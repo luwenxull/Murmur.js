@@ -46,54 +46,58 @@
 
 	let Murmur = __webpack_require__(1).Murmur;
 	let app = Murmur.prepare({
-	    // templateUrl: 'template.html',
-	    template: '<div>{age}</div><img mm-ref="footer"/>',
+	    templateUrl: 'template.html',
+	    // template: '<div>{age}</div><img mm-ref="footer"/>',
 	    loc: 'app'
 	}); /*.then(function (tree) {
 	      tree.ref('img')
 	    }).then(function(){
-	      tree.render({
-	          src: 'http://ggoer.com/favicon.ico',
-	          name: 'luwenxu',
-	          cn1: 'red',
-	          cn2: 'test',
-	          position: 'fe',
-	          location: "suzhou",
-	          click: function (murmur, e) {
-	              murmur.update({
-	                  src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
-	              })
-	          },
-	          click2: function (murmur, e) {
-	              murmur.update({
-	                  location: 'beijing',
-	                  cn1: 'green'
-	              })
-	          },
-	          people: [{
-	              age: 24,
-	              show: true
-	          }, {
-	              age: 25,
-	              show: false
-	          }]
-	      });
+	      
 	    })*/
 
 	let footer = Murmur.prepare({
 	    templateUrl: 'footer.html'
 	});
 	let author = Murmur.prepare({
-	    templateUrl: 'author.html'
+	    template: '{author}'
 	});
 	footer.then(function (f) {
 	    f.ref('author').refTo(author);
 	});
 	app.then(function (app) {
-	    // app.replaceWith(footer);
 	    app.ref('footer').refTo(footer);
 	}).then(function (app) {
-	    app.render({ name: 'luwenxu', age: 24, author: 'daidai' });
+	    console.log(app);
+	    app.render({
+	        src: 'http://ggoer.com/favicon.ico',
+	        name: 'luwenxu',
+	        cn1: 'red',
+	        cn2: 'test',
+	        author: "big lu",
+	        position: 'fe',
+	        location: "suzhou",
+	        click: function (murmur, e) {
+	            murmur.update({
+	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
+	            });
+	        },
+	        click2: function (murmur, e) {
+	            murmur.update({
+	                location: 'beijing',
+	                cn1: 'green'
+	            });
+	        },
+	        mount: function (dom, murmur) {
+	            console.log(dom, murmur);
+	        },
+	        people: [{
+	            age: 24,
+	            show: true
+	        }, {
+	            age: 25,
+	            show: true
+	        }]
+	    });
 	});
 	// setTimeout(function () a{
 	//     app().update({
@@ -459,7 +463,6 @@
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            // child.$repeatDirective.repeatModel = murmur.$repeatDirective.repeatModel
 	            parent.appendChild(child.create(murmur.combineModelToChild()));
 	        }
 	    };
@@ -697,7 +700,8 @@
 	exports.MurmurDirectiveTypes = {
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
 	    "mm-if": { name: "mm-if", directive: "IfDirective" },
-	    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' }
+	    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' },
+	    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' }
 	};
 	var MurmurConnectTypes;
 	(function (MurmurConnectTypes) {
@@ -745,7 +749,6 @@
 	        return _this;
 	    }
 	    RepeatDirective.prototype.compile = function (murmur, domGenerated) {
-	        // murmur.$repeatDirective.inRepeat=true;
 	        var dExp = this.directiveExpression,
 	            model = murmur.primaryModel;
 	        var fragment = document.createDocumentFragment();
@@ -756,15 +759,12 @@
 	                var clone = murmur_core_1.default.clone(murmur);
 	                clone.$repeatDirective.$repeatEntrance = false;
 	                clone.$repeatDirective.$repeatEntity = true;
-	                // clone.$repeatDirective.repeatModel = a;
 	                clone.stateModel = stateModel;
 	                this.murmurList.push(clone);
-	                // clone.$repeatDirective=murmur.$repeatDirective;
 	                var repeatDom = clone.create(model);
 	                fragment.appendChild(repeatDom);
 	            }
 	        }
-	        // murmur.$repeatDirective.inRepeat=false;
 	        return fragment;
 	    };
 	    RepeatDirective.prototype.update = function (murmur, updateData) {
@@ -782,10 +782,6 @@
 	                var currentModel = repeatSource[i];
 	                var m = this.murmurList[i];
 	                if (m) {
-	                    // m.$repeatDirective.repeatModel = currentModel;
-	                    // for (let deepChild of m.getRecursiveMurmurChildren()) {
-	                    //     deepChild.$repeatDirective.repeatModel = currentModel;
-	                    // }
 	                    m.stateModel = currentModel;
 	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)));
 	                }
@@ -863,6 +859,20 @@
 	    return RefDirective;
 	}(MurmurDirective);
 	exports.RefDirective = RefDirective;
+	var MountDirective = function (_super) {
+	    __extends(MountDirective, _super);
+	    function MountDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    MountDirective.prototype.compile = function (murmur, domGenerated) {
+	        var mountCallback = murmur.extract(this.directiveExpression);
+	        mountCallback && mountCallback(domGenerated, murmur);
+	        return domGenerated;
+	    };
+	    MountDirective.prototype.update = function () {};
+	    return MountDirective;
+	}(MurmurDirective);
+	exports.MountDirective = MountDirective;
 
 /***/ },
 /* 8 */

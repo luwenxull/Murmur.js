@@ -15,7 +15,6 @@ export class MurmurDirective {
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
     public murmurList: Murmur[] = [];
     compile(murmur: Murmur, domGenerated: Node): Node {
-        // murmur.$repeatDirective.inRepeat=true;
         let dExp = this.directiveExpression,model=murmur.primaryModel;
         let fragment = document.createDocumentFragment();
         let repeatSource;
@@ -24,15 +23,12 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 let clone = Murmur.clone(murmur);
                 clone.$repeatDirective.$repeatEntrance = false;
                 clone.$repeatDirective.$repeatEntity = true;
-                // clone.$repeatDirective.repeatModel = a;
                 clone.stateModel=stateModel
                 this.murmurList.push(clone);
-                // clone.$repeatDirective=murmur.$repeatDirective;
                 let repeatDom = clone.create(model);
                 fragment.appendChild(repeatDom)
             }
         }
-        // murmur.$repeatDirective.inRepeat=false;
         return fragment
     }
     update(murmur: Murmur, updateData) {
@@ -48,10 +44,6 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 let currentModel = repeatSource[i];
                 let m = this.murmurList[i];
                 if (m) {
-                    // m.$repeatDirective.repeatModel = currentModel;
-                    // for (let deepChild of m.getRecursiveMurmurChildren()) {
-                    //     deepChild.$repeatDirective.repeatModel = currentModel;
-                    // }
                     m.stateModel=currentModel;
                     m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)))
                 }
@@ -110,6 +102,15 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
 export class RefDirective extends MurmurDirective implements MurmurDirectiveItf{
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
         murmur.refClue=this.directiveExpression;
+        return domGenerated
+    }
+    update(){}
+}
+
+export class MountDirective extends MurmurDirective implements MurmurDirectiveItf{
+    compile(murmur: Murmur, domGenerated: HTMLElement): Node {
+        let mountCallback=murmur.extract(this.directiveExpression);
+        mountCallback && mountCallback(domGenerated,murmur);
         return domGenerated
     }
     update(){}
