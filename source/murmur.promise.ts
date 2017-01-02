@@ -5,7 +5,7 @@ export class MurmurPromise {
     public status: number = MurmurPromiseType.PENDING
     public murmur:Murmur
     public resolveNotify:boolean=false;
-    constructor() { }
+    constructor(public name) { }
     then(fn) {
         this.success.push(fn);
         if(this.status===MurmurPromiseType.RESOLVED){

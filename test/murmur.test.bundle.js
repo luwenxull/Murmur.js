@@ -47,7 +47,7 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	let app = Murmur.prepare({
 	    // templateUrl: 'template.html',
-	    template: '<div>{age}</div><img mm-ref="img"/>',
+	    template: '<div>{age}</div><img mm-ref="footer"/>',
 	    loc: 'app'
 	}); /*.then(function (tree) {
 	      tree.ref('img')
@@ -83,12 +83,17 @@
 	let footer = Murmur.prepare({
 	    templateUrl: 'footer.html'
 	});
-
+	let author = Murmur.prepare({
+	    templateUrl: 'author.html'
+	});
+	footer.then(function (f) {
+	    f.ref('author').refTo(author);
+	});
 	app.then(function (app) {
 	    // app.replaceWith(footer);
-	    app.ref('img').refTo(footer);
+	    app.ref('footer').refTo(footer);
 	}).then(function (app) {
-	    app.render({ name: 'luwenxu', age: 24 });
+	    app.render({ name: 'luwenxu', age: 24, author: 'daidai' });
 	});
 	// setTimeout(function () a{
 	//     app().update({
@@ -142,9 +147,8 @@
 	        this.stateModel = null;
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this._fields = {};
+	        this.refPromise = null;
 	        this.$directives = [];
-	        // public waitPromiseManager: { promises: MurmurPromise[], waitCount: number, waitClear: boolean } = { promises: [], waitCount: 0, waitClear: true }
-	        this.waitPromise = null;
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -163,9 +167,6 @@
 	            var childNodes = root.childNodes;
 	            var loc = document.getElementById(_this._loc);
 	            var childNodesArr = Array.prototype.slice.call(childNodes, 0);
-	            // for (let i = 0; i < childNodes.length;) {
-	            //     loc.appendChild(childNodes[i])
-	            // }
 	            for (var _i = 0, childNodesArr_1 = childNodesArr; _i < childNodesArr_1.length; _i++) {
 	                var child = childNodesArr_1[_i];
 	                loc.appendChild(child);
@@ -176,7 +177,7 @@
 	        if (notResolvedPromise === void 0) {
 	            notResolvedPromise = [];
 	        }
-	        var waitPromise = this.waitPromise;
+	        var waitPromise = this.refPromise;
 	        if (waitPromise) {
 	            if (waitPromise.status === murmur_type_1.MurmurPromiseType.PENDING) {
 	                notResolvedPromise.push(waitPromise);
@@ -201,7 +202,7 @@
 	            if (nrp.status === murmur_type_1.MurmurPromiseType.PENDING && !nrp.resolveNotify) {
 	                nrp.resolveNotify = true;
 	                nrp.then(function (murmur) {
-	                    notResolvedPromise = notResolvedPromise.concat(murmur.getAllNotResolved());
+	                    murmur.getAllNotResolved(notResolvedPromise);
 	                    _this.handleNotResolved(notResolvedPromise, callback);
 	                });
 	                allResolved = false;
@@ -302,21 +303,23 @@
 	            return murmur.refClue === ref;
 	        };
 	        var refMurmur = this.iterateChildren(fn);
-	        console.log(refMurmur);
 	        return refMurmur;
 	    };
 	    Murmur.prototype.refTo = function (murmurPromise) {
 	        var _this = this;
-	        this.waitPromise = murmurPromise;
+	        this.refPromise = murmurPromise;
 	        murmurPromise.then(function () {
 	            _this.simpleClone(murmurPromise);
 	        });
 	    };
 	    Murmur.prototype.simpleClone = function (promise) {
-	        var source = promise.murmur;
-	        this.children = source.children;
-	        this.attr = source.attr;
-	        this.nodeName = source.nodeName;
+	        var murmur = promise.murmur;
+	        var source = murmur.children[0];
+	        if (isMurmur(source)) {
+	            this.children = source.children;
+	            this.attr = source.attr;
+	            this.nodeName = source.nodeName;
+	        } else {}
 	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
@@ -349,7 +352,7 @@
 	    };
 	    Murmur.prepare = function (renderObj, ready) {
 	        var murmurTree;
-	        var murmurPromise = new murmur_promise_1.MurmurPromise();
+	        var murmurPromise = new murmur_promise_1.MurmurPromise(renderObj.template || renderObj.templateUrl);
 	        if (renderObj.template) {
 	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
 	            murmurTree._loc = renderObj.loc;
@@ -1096,7 +1099,8 @@
 
 	var murmur_type_1 = __webpack_require__(6);
 	var MurmurPromise = function () {
-	    function MurmurPromise() {
+	    function MurmurPromise(name) {
+	        this.name = name;
 	        this.success = [];
 	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
 	        this.resolveNotify = false;

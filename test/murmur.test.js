@@ -1,7 +1,7 @@
 let Murmur = require('../Murmur').Murmur
 let app = Murmur.prepare({
     // templateUrl: 'template.html',
-    template: '<div>{age}</div><img mm-ref="img"/>',
+    template: '<div>{age}</div><img mm-ref="footer"/>',
     loc: 'app',
 })/*.then(function (tree) {
     tree.ref('img')
@@ -37,12 +37,17 @@ let app = Murmur.prepare({
 let footer=Murmur.prepare({
     templateUrl:'footer.html'
 })
-
+let author=Murmur.prepare({
+    templateUrl:'author.html'
+})
+footer.then(function(f){
+    f.ref('author').refTo(author)
+})
 app.then(function(app){
     // app.replaceWith(footer);
-    app.ref('img').refTo(footer);
+    app.ref('footer').refTo(footer);
 }).then(function(app){
-    app.render({name:'luwenxu',age:24})
+    app.render({name:'luwenxu',age:24,author:'daidai'})
 })
 // setTimeout(function () a{
 //     app().update({
