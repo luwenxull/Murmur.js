@@ -53,7 +53,7 @@ export default class Murmur implements MurmurItf {
         this._connected = MurmurCreatorFactory().create(this);
         return this._connected.dom
     }
-    render(model) {
+    render(model, success?: (murmur: Murmur) => void) {
         let notResolvedPromise = this.getAllNotResolved();
         this.handleNotResolved(notResolvedPromise, () => {
             let root = this.create(model);
@@ -62,6 +62,9 @@ export default class Murmur implements MurmurItf {
             let childNodesArr = Array.prototype.slice.call(childNodes, 0)
             for (let child of childNodesArr) {
                 loc.appendChild(child)
+            }
+            if (success) {
+                success.call(null, this)
             }
         })
     }
@@ -190,6 +193,9 @@ export default class Murmur implements MurmurItf {
             this.simpleClone(murmurPromise);
         })
     }
+    getNode(): Node {
+        return this._connected.get()
+    }
     simpleClone(promise: MurmurPromise) {
         let murmur = promise.murmur;
         let source = murmur.children[0];
@@ -197,7 +203,7 @@ export default class Murmur implements MurmurItf {
             this.children = source.children;
             this.attr = source.attr;
             this.nodeName = source.nodeName;
-        }else{
+        } else {
             // this=source
         }
     }

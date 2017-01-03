@@ -22,7 +22,6 @@ footer.then(function (f) {
 app.then(function (app) {
     app.ref('footer').refTo(footer);
 }).then(function (app) {
-    console.log(app);
     app.render({
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
@@ -69,5 +68,7 @@ app.then(function (app) {
             age: 25,
             show: true
         }]
+    },function(app){
+        console.log(app);
     });
 })

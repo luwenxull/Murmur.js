@@ -59,10 +59,11 @@
 	"use strict";
 
 	var murmur_creator_1 = __webpack_require__(2);
-	var murmur_field_1 = __webpack_require__(7);
+	var murmur_field_1 = __webpack_require__(8);
 	var murmur_tool_1 = __webpack_require__(3);
-	var wx_parser_1 = __webpack_require__(8);
-	__webpack_require__(12);
+	var wx_parser_1 = __webpack_require__(9);
+	var murmur_promise_1 = __webpack_require__(13);
+	var murmur_type_1 = __webpack_require__(5);
 	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
@@ -71,32 +72,80 @@
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
-	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatModel: null, repeatDInstance: null };
+	        this.primaryModel = null;
+	        this.stateModel = null;
+	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this._fields = {};
+	        this.refPromise = null;
 	        this.$directives = [];
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
 	        this.murmurID = murmurID++;
 	    }
-	    Murmur.prototype.create = function (model) {
-	        if (model === void 0) {
-	            model = null;
-	        }
-	        this.model = model;
-	        this._connected = murmur_creator_1.default().create(this, model);
+	    Murmur.prototype.create = function (primaryModel) {
+	        this.primaryModel = primaryModel;
+	        this._connected = murmur_creator_1.default().create(this);
 	        return this._connected.dom;
 	    };
-	    Murmur.prototype.render = function (model) {
-	        var root = this.create(model);
-	        var childNodes = root.childNodes;
-	        var loc = document.getElementById(this._loc);
-	        for (var i = 0; i < childNodes.length; i++) {
-	            loc.appendChild(childNodes[i]);
+	    Murmur.prototype.render = function (model, success) {
+	        var _this = this;
+	        var notResolvedPromise = this.getAllNotResolved();
+	        this.handleNotResolved(notResolvedPromise, function () {
+	            var root = _this.create(model);
+	            var childNodes = root.childNodes;
+	            var loc = document.getElementById(_this._loc);
+	            var childNodesArr = Array.prototype.slice.call(childNodes, 0);
+	            for (var _i = 0, childNodesArr_1 = childNodesArr; _i < childNodesArr_1.length; _i++) {
+	                var child = childNodesArr_1[_i];
+	                loc.appendChild(child);
+	            }
+	            if (success) {
+	                success.call(null, _this);
+	            }
+	        });
+	    };
+	    Murmur.prototype.getAllNotResolved = function (notResolvedPromise) {
+	        if (notResolvedPromise === void 0) {
+	            notResolvedPromise = [];
+	        }
+	        var waitPromise = this.refPromise;
+	        if (waitPromise) {
+	            if (waitPromise.status === murmur_type_1.MurmurPromiseType.PENDING) {
+	                notResolvedPromise.push(waitPromise);
+	            }
+	            if (waitPromise.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	                waitPromise.murmur.getAllNotResolved(notResolvedPromise);
+	            }
+	        }
+	        for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
+	            var child = _a[_i];
+	            if (isMurmur(child)) {
+	                child.getAllNotResolved(notResolvedPromise);
+	            }
+	        }
+	        return notResolvedPromise;
+	    };
+	    Murmur.prototype.handleNotResolved = function (notResolvedPromise, callback) {
+	        var _this = this;
+	        var allResolved = true;
+	        for (var _i = 0, notResolvedPromise_1 = notResolvedPromise; _i < notResolvedPromise_1.length; _i++) {
+	            var nrp = notResolvedPromise_1[_i];
+	            if (nrp.status === murmur_type_1.MurmurPromiseType.PENDING && !nrp.resolveNotify) {
+	                nrp.resolveNotify = true;
+	                nrp.then(function (murmur) {
+	                    murmur.getAllNotResolved(notResolvedPromise);
+	                    _this.handleNotResolved(notResolvedPromise, callback);
+	                });
+	                allResolved = false;
+	            }
+	        }
+	        if (allResolved) {
+	            callback();
 	        }
 	    };
 	    Murmur.prototype.update = function (updateObj) {
-	        Object.assign(this.model, updateObj);
+	        this.stateModel = Object.assign({}, this.stateModel || {}, updateObj);
 	        this.dispatchUpdate(updateObj, Object.keys(updateObj));
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
@@ -109,6 +158,7 @@
 	            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
 	                var child = _c[_b];
 	                if (isMurmur(child)) {
+	                    child.primaryModel = this.combineModelToChild();
 	                    child.dispatchUpdate(updateObj, keysNeedToBeUpdate);
 	                }
 	            }
@@ -142,21 +192,69 @@
 	        return copyVal;
 	    };
 	    Murmur.prototype.extract = function (field) {
-	        var repeatModel = this.$repeatDirective.repeatModel;
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
-	            return repeatModel[field.slice(1)];
+	            return this.primaryModel[field.slice(1)];
 	        } else {
-	            return this.model[field];
-	        }
-	    };
-	    Murmur.prototype.replaceRepeatModelOfChild = function (newModel) {
-	        for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-	            var child = _a[_i];
-	            if (isMurmur(child)) {
-	                child.$repeatDirective.repeatModel = newModel;
-	                child.replaceRepeatModelOfChild(newModel);
+	            if (this.stateModel && field in this.stateModel) {
+	                return (this.stateModel || this.primaryModel)[field];
+	            } else {
+	                return this.primaryModel[field];
 	            }
 	        }
+	    };
+	    Murmur.prototype.combineModelToChild = function () {
+	        if (this.stateModel) {
+	            return Object.assign({}, this.primaryModel, this.stateModel);
+	        }
+	        return this.primaryModel;
+	    };
+	    Murmur.prototype.iterateChildren = function (ifBreak) {
+	        if (ifBreak(this)) {
+	            return this;
+	        }
+	        var murmurChildren = this.children;
+	        var result;
+	        if (this.$repeatDirective.repeatDInstance) {
+	            murmurChildren = this.$repeatDirective.repeatDInstance.murmurList;
+	        }
+	        for (var _i = 0, murmurChildren_1 = murmurChildren; _i < murmurChildren_1.length; _i++) {
+	            var child = murmurChildren_1[_i];
+	            if (isMurmur(child)) {
+	                if (ifBreak(child)) {
+	                    return child;
+	                }
+	                if (result = child.iterateChildren(ifBreak)) {
+	                    return result;
+	                }
+	            }
+	        }
+	        return result;
+	    };
+	    Murmur.prototype.ref = function (ref) {
+	        var fn = function (murmur) {
+	            return murmur.refClue === ref;
+	        };
+	        var refMurmur = this.iterateChildren(fn);
+	        return refMurmur;
+	    };
+	    Murmur.prototype.refTo = function (murmurPromise) {
+	        var _this = this;
+	        this.refPromise = murmurPromise;
+	        murmurPromise.then(function () {
+	            _this.simpleClone(murmurPromise);
+	        });
+	    };
+	    Murmur.prototype.getNode = function () {
+	        return this._connected.get();
+	    };
+	    Murmur.prototype.simpleClone = function (promise) {
+	        var murmur = promise.murmur;
+	        var source = murmur.children[0];
+	        if (isMurmur(source)) {
+	            this.children = source.children;
+	            this.attr = source.attr;
+	            this.nodeName = source.nodeName;
+	        } else {}
 	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
@@ -166,10 +264,14 @@
 	            children = children.map(function (child) {
 	                return Murmur.convert(child);
 	            });
-	            return new Murmur(nodeName, attr, children);
-	        } else {
-	            return obj;
+	            var m = new Murmur(nodeName, attr, children);
+	            for (var _i = 0, attr_1 = attr; _i < attr_1.length; _i++) {
+	                var a = attr_1[_i];
+	                if (a.name == 'mm-ref') m.refClue = a.value;
+	            }
+	            return m;
 	        }
+	        return obj;
 	    };
 	    Murmur.clone = function (murmur) {
 	        if (murmur.nodeName) {
@@ -180,28 +282,27 @@
 	                return Murmur.clone(child);
 	            });
 	            return new Murmur(nodeName, attr, children);
-	        } else {
-	            return murmur;
 	        }
+	        return murmur;
 	    };
-	    Murmur.prepare = function (renderObj) {
+	    Murmur.prepare = function (renderObj, ready) {
 	        var murmurTree;
+	        var murmurPromise = new murmur_promise_1.MurmurPromise(renderObj.template || renderObj.templateUrl);
 	        if (renderObj.template) {
 	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
 	            murmurTree._loc = renderObj.loc;
-	            return murmurTree;
+	            murmurPromise.resolve(murmurTree);
 	        } else if (renderObj.templateUrl) {
-	            return fetch(renderObj.templateUrl).then(function (response) {
-	                return response.text();
-	            }).then(function (body) {
-	                murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(body, murmurRegex));
-	                murmurTree._loc = renderObj.loc;
-	                return murmurTree;
-	            }).then(function (murmurTree) {
-	                renderObj.ok && renderObj.ok(murmurTree);
-	                return murmurTree;
+	            murmur_tool_1.ajax({
+	                url: renderObj.templateUrl,
+	                success: function (responseText) {
+	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex));
+	                    murmurTree._loc = renderObj.loc;
+	                    murmurPromise.resolve(murmurTree);
+	                }
 	            });
 	        }
+	        return murmurPromise;
 	    };
 	    return Murmur;
 	}();
@@ -215,50 +316,45 @@
 	"use strict";
 
 	var tools = __webpack_require__(3);
-	var murmur_type_1 = __webpack_require__(4);
-	var MurmurDirectives = __webpack_require__(5);
-	var murmur_connect_1 = __webpack_require__(6);
+	var murmur_type_1 = __webpack_require__(5);
+	var MurmurDirectives = __webpack_require__(6);
+	var murmur_connect_1 = __webpack_require__(7);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
 	        this.extractValueRegexr = /\{:{0,1}\w+\}/g;
 	    }
-	    MurmurCreator.prototype.create = function (murmur, model) {
+	    MurmurCreator.prototype.create = function (murmur) {
 	        var connect;
 	        if (murmur.nodeName === murmur_type_1.MurmurRegexType.TEXTNODE) {
-	            connect = new murmur_connect_1.default(this.createTextNode(murmur, model), murmur_type_1.MurmurConnectTypes[0]);
+	            connect = new murmur_connect_1.default(this.createTextNode(murmur), murmur_type_1.MurmurConnectTypes[0]);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
-	            var compiledDom = this.checkMMDirective(model, murmur, dom);
+	            var compiledDom = this.checkMMDirective(murmur, dom);
 	            if (compiledDom) {
 	                connect = new murmur_connect_1.default(compiledDom, murmur_type_1.MurmurConnectTypes[1]);
 	            } else {
-	                this.attachAttr(dom, model, murmur);
-	                this.appendChildren(dom, model, murmur);
+	                this.attachAttr(dom, murmur);
+	                this.appendChildren(dom, murmur);
 	                connect = new murmur_connect_1.default(dom, murmur_type_1.MurmurConnectTypes[0]);
 	            }
 	        }
 	        return connect;
 	    };
-	    MurmurCreator.prototype.checkMMDirective = function (model, murmur, domGenerated) {
+	    MurmurCreator.prototype.checkMMDirective = function (murmur, domGenerated) {
 	        var fragment = document.createDocumentFragment();
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var attr = _a[_i];
 	            var name_1 = attr.name,
 	                value = attr.value;
 	            if (name_1 == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_1].directive](value);
-	                murmur.$directives.push(directive);
-	                murmur.$repeatDirective.repeatDInstance = directive;
-	                return directive.compile(model, murmur, domGenerated);
+	                return this.compileRepeat(murmur, domGenerated, name_1, value);
 	            }
 	        }
 	        var _loop_1 = function (attr) {
 	            var name_2 = attr.name,
 	                value = attr.value;
 	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypes[name_2]) {
-	                var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name_2].directive](value);
-	                murmur.$directives.push(directive);
-	                directive.compile(model, murmur, domGenerated);
+	                this_1.compileNormal(murmur, domGenerated, name_2, value);
 	            }
 	            if (name_2 in murmur_type_1.MurmurEventTypes) {
 	                var eventName = name_2.split('-')[1],
@@ -268,13 +364,25 @@
 	                });
 	            }
 	        };
+	        var this_1 = this;
 	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
 	            var attr = _c[_b];
 	            _loop_1(attr);
 	        }
 	        return null;
 	    };
-	    MurmurCreator.prototype.attachAttr = function (dom, model, murmur) {
+	    MurmurCreator.prototype.compileRepeat = function (murmur, domGenerated, name, value) {
+	        var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name].directive](value);
+	        murmur.$directives.push(directive);
+	        murmur.$repeatDirective.repeatDInstance = directive;
+	        return directive.compile(murmur, domGenerated);
+	    };
+	    MurmurCreator.prototype.compileNormal = function (murmur, domGenerated, name, value) {
+	        var directive = new MurmurDirectives[murmur_type_1.MurmurDirectiveTypes[name].directive](value);
+	        murmur.$directives.push(directive);
+	        directive.compile(murmur, domGenerated);
+	    };
+	    MurmurCreator.prototype.attachAttr = function (dom, murmur) {
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var a = _a[_i];
 	            var htmlAttr = document.createAttribute(a.name);
@@ -282,15 +390,14 @@
 	            dom.setAttributeNode(htmlAttr);
 	        }
 	    };
-	    MurmurCreator.prototype.appendChildren = function (parent, model, murmur) {
+	    MurmurCreator.prototype.appendChildren = function (parent, murmur) {
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            child.$repeatDirective.repeatModel = murmur.$repeatDirective.repeatModel;
-	            parent.appendChild(child.create(model));
+	            parent.appendChild(child.create(murmur.combineModelToChild()));
 	        }
 	    };
-	    MurmurCreator.prototype.createTextNode = function (murmur, model) {
+	    MurmurCreator.prototype.createTextNode = function (murmur) {
 	        var onlyChild = murmur.children[0];
 	        var textNode;
 	        try {
@@ -320,16 +427,18 @@
 
 /***/ },
 /* 3 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+
+	var murmur_tools_ajax_1 = __webpack_require__(4);
+	exports.ajax = murmur_tools_ajax_1.ajax;
 	/**
 	 * 判断是否是简单值
 	 *
 	 * @param {any} val
 	 * @returns
 	 */
-
 	function isSimpleValue(val) {
 	    var type = typeof val;
 	    return type === 'string' || type === 'number' || false;
@@ -468,6 +577,46 @@
 
 	"use strict";
 
+	function formatParams(data) {
+	    var arr = [];
+	    for (var name in data) {
+	        arr.push(encodeURIComponent(name) + "=" + encodeURIComponent(data[name]));
+	    }
+	    arr.push(("v=" + Math.random()).replace(".", ""));
+	    return arr.join("&");
+	}
+	function ajax(options) {
+	    options.type = (options.type || "GET").toUpperCase();
+	    options.dataType = options.dataType || "json";
+	    var params = formatParams(options.data);
+	    var xhr = new XMLHttpRequest();
+	    xhr.onreadystatechange = function () {
+	        if (xhr.readyState == 4) {
+	            var status = xhr.status;
+	            if (status >= 200 && status < 300) {
+	                options.success && options.success(xhr.responseText, xhr.responseXML);
+	            } else {
+	                options.fail && options.fail(status);
+	            }
+	        }
+	    };
+	    if (options.type == "POST") {
+	        xhr.open("POST", options.url, true);
+	        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	        xhr.send(params);
+	    } else if (options.type == "GET") {
+	        xhr.open("GET", options.url + "?" + params, true);
+	        xhr.send(null);
+	    }
+	}
+	exports.ajax = ajax;
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
+	"use strict";
+
 	exports.MurmurRegexType = {
 	    TEXTNODE: 'TEXTNODE',
 	    NODESTART: 'NODESTART',
@@ -481,7 +630,9 @@
 	})(MurmurFieldType = exports.MurmurFieldType || (exports.MurmurFieldType = {}));
 	exports.MurmurDirectiveTypes = {
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
-	    "mm-if": { name: "mm-if", directive: "IfDirective" }
+	    "mm-if": { name: "mm-if", directive: "IfDirective" },
+	    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' },
+	    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' }
 	};
 	var MurmurConnectTypes;
 	(function (MurmurConnectTypes) {
@@ -492,9 +643,15 @@
 	(function (MurmurEventTypes) {
 	    MurmurEventTypes[MurmurEventTypes["mm-click"] = 0] = "mm-click";
 	})(MurmurEventTypes = exports.MurmurEventTypes || (exports.MurmurEventTypes = {}));
+	var MurmurPromiseType;
+	(function (MurmurPromiseType) {
+	    MurmurPromiseType[MurmurPromiseType["PENDING"] = 0] = "PENDING";
+	    MurmurPromiseType[MurmurPromiseType["RESOLVED"] = 1] = "RESOLVED";
+	    MurmurPromiseType[MurmurPromiseType["REJECTED"] = 2] = "REJECTED";
+	})(MurmurPromiseType = exports.MurmurPromiseType || (exports.MurmurPromiseType = {}));
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -522,69 +679,71 @@
 	        _this.murmurList = [];
 	        return _this;
 	    }
-	    RepeatDirective.prototype.compile = function (model, murmur, domGenerated) {
-	        // murmur.$repeatDirective.inRepeat=true;
-	        var dExp = this.directiveExpression;
+	    RepeatDirective.prototype.compile = function (murmur, domGenerated) {
+	        var dExp = this.directiveExpression,
+	            model = murmur.primaryModel;
 	        var fragment = document.createDocumentFragment();
-	        if (model[dExp]) {
-	            for (var _i = 0, _a = model[dExp]; _i < _a.length; _i++) {
-	                var a = _a[_i];
+	        var repeatSource;
+	        if (repeatSource = murmur.extract(dExp)) {
+	            for (var _i = 0, repeatSource_1 = repeatSource; _i < repeatSource_1.length; _i++) {
+	                var stateModel = repeatSource_1[_i];
 	                var clone = murmur_core_1.default.clone(murmur);
 	                clone.$repeatDirective.$repeatEntrance = false;
 	                clone.$repeatDirective.$repeatEntity = true;
-	                clone.$repeatDirective.repeatModel = a;
+	                clone.stateModel = stateModel;
 	                this.murmurList.push(clone);
-	                // clone.$repeatDirective=murmur.$repeatDirective;
 	                var repeatDom = clone.create(model);
 	                fragment.appendChild(repeatDom);
 	            }
 	        }
-	        // murmur.$repeatDirective.inRepeat=false;
 	        return fragment;
 	    };
 	    RepeatDirective.prototype.update = function (murmur, updateData) {
-	        var repeatArr = updateData[this.directiveExpression];
+	        var repeatSource = murmur.extract(this.directiveExpression);
 	        var keysNeedToBeUpdate = Object.keys(updateData);
-	        if (repeatArr) {
-	            var repeatArrLength = repeatArr.length,
+	        for (var _i = 0, _a = this.murmurList; _i < _a.length; _i++) {
+	            var currentMurmur = _a[_i];
+	            currentMurmur.primaryModel = murmur.primaryModel;
+	        }
+	        if (repeatSource) {
+	            var repeatSourceLength = repeatSource.length,
 	                mmListLength = this.murmurList.length;
-	            this.lengthCheck(repeatArr, murmur);
-	            for (var i = 0; i < repeatArrLength; i++) {
-	                var repeatObj = repeatArr[i];
+	            this.lengthCheck(repeatSource, murmur, updateData);
+	            for (var i = 0; i < repeatSourceLength; i++) {
+	                var currentModel = repeatSource[i];
 	                var m = this.murmurList[i];
 	                if (m) {
-	                    m.$repeatDirective.repeatModel = repeatObj;
-	                    m.replaceRepeatModelOfChild(repeatObj);
-	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(repeatObj)));
+	                    m.stateModel = currentModel;
+	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)));
 	                }
 	            }
 	        }
 	    };
-	    RepeatDirective.prototype.lengthCheck = function (repeatArr, murmur) {
-	        var repeatArrLength = repeatArr.length,
+	    RepeatDirective.prototype.lengthCheck = function (repeatSource, murmur, updateData) {
+	        var repeatSourceLength = repeatSource.length,
 	            mmListLength = this.murmurList.length;
-	        if (mmListLength > repeatArrLength) {
-	            this.removeExcessMurmur(mmListLength, repeatArrLength);
+	        if (mmListLength > repeatSourceLength) {
+	            this.removeExcessMurmur(mmListLength, repeatSourceLength);
 	        }
-	        if (mmListLength < repeatArrLength) {
-	            this.addExtraMurmur(repeatArr, murmur, mmListLength, repeatArrLength);
+	        if (mmListLength < repeatSourceLength) {
+	            this.addExtraMurmur(repeatSource, murmur, mmListLength, repeatSourceLength, updateData);
 	        }
 	    };
-	    RepeatDirective.prototype.removeExcessMurmur = function (mmListLength, repeatArrLength) {
-	        while (repeatArrLength < mmListLength) {
+	    RepeatDirective.prototype.removeExcessMurmur = function (mmListLength, repeatSourceLength) {
+	        while (repeatSourceLength < mmListLength) {
 	            this.murmurList[--mmListLength]._connected.get().remove();
 	            this.murmurList.pop();
 	        }
 	    };
-	    RepeatDirective.prototype.addExtraMurmur = function (repeatArr, murmur, mmListLength, repeatArrLength) {
-	        while (mmListLength < repeatArrLength) {
+	    RepeatDirective.prototype.addExtraMurmur = function (repeatSource, murmur, mmListLength, repeatSourceLength, updateData) {
+	        while (mmListLength < repeatSourceLength) {
 	            var clone = murmur_core_1.default.clone(murmur),
 	                newDom = void 0,
 	                lastDom = void 0;
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
-	            clone.$repeatDirective.repeatModel = repeatArr[mmListLength++];
-	            newDom = clone.create(murmur.model);
+	            clone.stateModel = repeatSource[mmListLength++];
+	            newDom = clone.create(murmur.primaryModel);
 	            lastDom = this.murmurList[mmListLength - 2]._connected.get();
 	            murmur_tool_1.addSibling(lastDom, newDom);
 	            this.murmurList.push(clone);
@@ -598,7 +757,7 @@
 	    function IfDirective() {
 	        return _super.apply(this, arguments) || this;
 	    }
-	    IfDirective.prototype.compile = function (model, murmur, domGenerated) {
+	    IfDirective.prototype.compile = function (murmur, domGenerated) {
 	        var dExp = this.directiveExpression;
 	        if (!murmur.extract(dExp)) {
 	            domGenerated.style.display = 'none';
@@ -617,14 +776,43 @@
 	    return IfDirective;
 	}(MurmurDirective);
 	exports.IfDirective = IfDirective;
+	var RefDirective = function (_super) {
+	    __extends(RefDirective, _super);
+	    function RefDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    RefDirective.prototype.compile = function (murmur, domGenerated) {
+	        murmur.refClue = this.directiveExpression;
+	        return domGenerated;
+	    };
+	    RefDirective.prototype.update = function () {};
+	    return RefDirective;
+	}(MurmurDirective);
+	exports.RefDirective = RefDirective;
+	var MountDirective = function (_super) {
+	    __extends(MountDirective, _super);
+	    function MountDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    MountDirective.prototype.compile = function (murmur, domGenerated) {
+	        var mountCallback = murmur.extract(this.directiveExpression);
+	        setTimeout(function () {
+	            mountCallback && mountCallback(murmur, domGenerated);
+	        });
+	        return domGenerated;
+	    };
+	    MountDirective.prototype.update = function () {};
+	    return MountDirective;
+	}(MurmurDirective);
+	exports.MountDirective = MountDirective;
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(4);
+	var murmur_type_1 = __webpack_require__(5);
 	var Connect = function () {
 	    function Connect(dom, type) {
 	        this.dom = dom;
@@ -642,12 +830,12 @@
 	exports.default = Connect;
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(4);
+	var murmur_type_1 = __webpack_require__(5);
 	var MurmurField = function () {
 	    function MurmurField(value, expression, type, unit) {
 	        this.value = value;
@@ -680,20 +868,20 @@
 	exports.default = MurmurField;
 
 /***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports.wxParser=__webpack_require__(9)['default']();
-
-/***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
+	exports.wxParser=__webpack_require__(10)['default'];
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
 	"use strict";
-	var wxParser_tool_1 = __webpack_require__(10);
-	var wxParser_type_1 = __webpack_require__(11);
+	var wxParser_tool_1 = __webpack_require__(11);
+	var wxParser_type_1 = __webpack_require__(12);
 	function isText(obj) {
-	    return obj.type == wxParser_type_1.TEXTNODE;
+	    return obj && obj.type == wxParser_type_1.TEXTNODE;
 	}
 	var WxDomParser = (function () {
 	    function WxDomParser() {
@@ -743,16 +931,22 @@
 	    };
 	    WxDomParser.prototype.makeWxTree = function (results) {
 	        var openTreeList = [{ nodeName: 'ROOT', attr: [], children: [] }];
-	        for (var _i = 0, results_1 = results; _i < results_1.length; _i++) {
-	            var node = results_1[_i];
-	            this.make(node, openTreeList);
+	        for (var i = 0; i < results.length; i++) {
+	            this.make(results[i], results[i - 1], results[i + 1], openTreeList);
 	        }
 	        return openTreeList[0];
 	    };
-	    WxDomParser.prototype.make = function (result, openTreeList) {
+	    WxDomParser.prototype.make = function (result, last, next, openTreeList) {
 	        var tree = openTreeList[openTreeList.length - 1];
 	        if (isText(result)) {
-	            tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	            if (!isText(last) && !isText(next)) {
+	                if (wxParser_tool_1.removeAllSpace(result.value) !== '') {
+	                    tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	                }
+	            }
+	            else {
+	                tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	            }
 	        }
 	        else {
 	            if (result.endTagName) {
@@ -786,18 +980,12 @@
 	    };
 	    return WxDomParser;
 	}());
-	var wxDomParserFactory = (function () {
-	    var wxDomParser;
-	    return function () {
-	        return wxDomParser || (wxDomParser = new WxDomParser());
-	    };
-	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = wxDomParserFactory;
+	exports.default = new WxDomParser();
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -835,7 +1023,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -846,468 +1034,38 @@
 
 
 /***/ },
-/* 12 */
-/***/ function(module, exports) {
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
 
-	(function(self) {
-	  'use strict';
+	"use strict";
 
-	  if (self.fetch) {
-	    return
-	  }
-
-	  var support = {
-	    searchParams: 'URLSearchParams' in self,
-	    iterable: 'Symbol' in self && 'iterator' in Symbol,
-	    blob: 'FileReader' in self && 'Blob' in self && (function() {
-	      try {
-	        new Blob()
-	        return true
-	      } catch(e) {
-	        return false
-	      }
-	    })(),
-	    formData: 'FormData' in self,
-	    arrayBuffer: 'ArrayBuffer' in self
-	  }
-
-	  if (support.arrayBuffer) {
-	    var viewClasses = [
-	      '[object Int8Array]',
-	      '[object Uint8Array]',
-	      '[object Uint8ClampedArray]',
-	      '[object Int16Array]',
-	      '[object Uint16Array]',
-	      '[object Int32Array]',
-	      '[object Uint32Array]',
-	      '[object Float32Array]',
-	      '[object Float64Array]'
-	    ]
-
-	    var isDataView = function(obj) {
-	      return obj && DataView.prototype.isPrototypeOf(obj)
+	var murmur_type_1 = __webpack_require__(5);
+	var MurmurPromise = function () {
+	    function MurmurPromise(name) {
+	        this.name = name;
+	        this.success = [];
+	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
+	        this.resolveNotify = false;
 	    }
-
-	    var isArrayBufferView = ArrayBuffer.isView || function(obj) {
-	      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
-	    }
-	  }
-
-	  function normalizeName(name) {
-	    if (typeof name !== 'string') {
-	      name = String(name)
-	    }
-	    if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
-	      throw new TypeError('Invalid character in header field name')
-	    }
-	    return name.toLowerCase()
-	  }
-
-	  function normalizeValue(value) {
-	    if (typeof value !== 'string') {
-	      value = String(value)
-	    }
-	    return value
-	  }
-
-	  // Build a destructive iterator for the value list
-	  function iteratorFor(items) {
-	    var iterator = {
-	      next: function() {
-	        var value = items.shift()
-	        return {done: value === undefined, value: value}
-	      }
-	    }
-
-	    if (support.iterable) {
-	      iterator[Symbol.iterator] = function() {
-	        return iterator
-	      }
-	    }
-
-	    return iterator
-	  }
-
-	  function Headers(headers) {
-	    this.map = {}
-
-	    if (headers instanceof Headers) {
-	      headers.forEach(function(value, name) {
-	        this.append(name, value)
-	      }, this)
-
-	    } else if (headers) {
-	      Object.getOwnPropertyNames(headers).forEach(function(name) {
-	        this.append(name, headers[name])
-	      }, this)
-	    }
-	  }
-
-	  Headers.prototype.append = function(name, value) {
-	    name = normalizeName(name)
-	    value = normalizeValue(value)
-	    var oldValue = this.map[name]
-	    this.map[name] = oldValue ? oldValue+','+value : value
-	  }
-
-	  Headers.prototype['delete'] = function(name) {
-	    delete this.map[normalizeName(name)]
-	  }
-
-	  Headers.prototype.get = function(name) {
-	    name = normalizeName(name)
-	    return this.has(name) ? this.map[name] : null
-	  }
-
-	  Headers.prototype.has = function(name) {
-	    return this.map.hasOwnProperty(normalizeName(name))
-	  }
-
-	  Headers.prototype.set = function(name, value) {
-	    this.map[normalizeName(name)] = normalizeValue(value)
-	  }
-
-	  Headers.prototype.forEach = function(callback, thisArg) {
-	    for (var name in this.map) {
-	      if (this.map.hasOwnProperty(name)) {
-	        callback.call(thisArg, this.map[name], name, this)
-	      }
-	    }
-	  }
-
-	  Headers.prototype.keys = function() {
-	    var items = []
-	    this.forEach(function(value, name) { items.push(name) })
-	    return iteratorFor(items)
-	  }
-
-	  Headers.prototype.values = function() {
-	    var items = []
-	    this.forEach(function(value) { items.push(value) })
-	    return iteratorFor(items)
-	  }
-
-	  Headers.prototype.entries = function() {
-	    var items = []
-	    this.forEach(function(value, name) { items.push([name, value]) })
-	    return iteratorFor(items)
-	  }
-
-	  if (support.iterable) {
-	    Headers.prototype[Symbol.iterator] = Headers.prototype.entries
-	  }
-
-	  function consumed(body) {
-	    if (body.bodyUsed) {
-	      return Promise.reject(new TypeError('Already read'))
-	    }
-	    body.bodyUsed = true
-	  }
-
-	  function fileReaderReady(reader) {
-	    return new Promise(function(resolve, reject) {
-	      reader.onload = function() {
-	        resolve(reader.result)
-	      }
-	      reader.onerror = function() {
-	        reject(reader.error)
-	      }
-	    })
-	  }
-
-	  function readBlobAsArrayBuffer(blob) {
-	    var reader = new FileReader()
-	    var promise = fileReaderReady(reader)
-	    reader.readAsArrayBuffer(blob)
-	    return promise
-	  }
-
-	  function readBlobAsText(blob) {
-	    var reader = new FileReader()
-	    var promise = fileReaderReady(reader)
-	    reader.readAsText(blob)
-	    return promise
-	  }
-
-	  function readArrayBufferAsText(buf) {
-	    var view = new Uint8Array(buf)
-	    var chars = new Array(view.length)
-
-	    for (var i = 0; i < view.length; i++) {
-	      chars[i] = String.fromCharCode(view[i])
-	    }
-	    return chars.join('')
-	  }
-
-	  function bufferClone(buf) {
-	    if (buf.slice) {
-	      return buf.slice(0)
-	    } else {
-	      var view = new Uint8Array(buf.byteLength)
-	      view.set(new Uint8Array(buf))
-	      return view.buffer
-	    }
-	  }
-
-	  function Body() {
-	    this.bodyUsed = false
-
-	    this._initBody = function(body) {
-	      this._bodyInit = body
-	      if (!body) {
-	        this._bodyText = ''
-	      } else if (typeof body === 'string') {
-	        this._bodyText = body
-	      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
-	        this._bodyBlob = body
-	      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
-	        this._bodyFormData = body
-	      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-	        this._bodyText = body.toString()
-	      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
-	        this._bodyArrayBuffer = bufferClone(body.buffer)
-	        // IE 10-11 can't handle a DataView body.
-	        this._bodyInit = new Blob([this._bodyArrayBuffer])
-	      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
-	        this._bodyArrayBuffer = bufferClone(body)
-	      } else {
-	        throw new Error('unsupported BodyInit type')
-	      }
-
-	      if (!this.headers.get('content-type')) {
-	        if (typeof body === 'string') {
-	          this.headers.set('content-type', 'text/plain;charset=UTF-8')
-	        } else if (this._bodyBlob && this._bodyBlob.type) {
-	          this.headers.set('content-type', this._bodyBlob.type)
-	        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-	          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+	    MurmurPromise.prototype.then = function (fn) {
+	        this.success.push(fn);
+	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	            fn(this.murmur);
 	        }
-	      }
-	    }
-
-	    if (support.blob) {
-	      this.blob = function() {
-	        var rejected = consumed(this)
-	        if (rejected) {
-	          return rejected
+	        ;
+	        return this;
+	    };
+	    MurmurPromise.prototype.resolve = function (murmur) {
+	        this.status = murmur_type_1.MurmurPromiseType.RESOLVED;
+	        this.murmur = murmur;
+	        for (var _i = 0, _a = this.success; _i < _a.length; _i++) {
+	            var success = _a[_i];
+	            success(murmur);
 	        }
-
-	        if (this._bodyBlob) {
-	          return Promise.resolve(this._bodyBlob)
-	        } else if (this._bodyArrayBuffer) {
-	          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
-	        } else if (this._bodyFormData) {
-	          throw new Error('could not read FormData body as blob')
-	        } else {
-	          return Promise.resolve(new Blob([this._bodyText]))
-	        }
-	      }
-
-	      this.arrayBuffer = function() {
-	        if (this._bodyArrayBuffer) {
-	          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
-	        } else {
-	          return this.blob().then(readBlobAsArrayBuffer)
-	        }
-	      }
-	    }
-
-	    this.text = function() {
-	      var rejected = consumed(this)
-	      if (rejected) {
-	        return rejected
-	      }
-
-	      if (this._bodyBlob) {
-	        return readBlobAsText(this._bodyBlob)
-	      } else if (this._bodyArrayBuffer) {
-	        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
-	      } else if (this._bodyFormData) {
-	        throw new Error('could not read FormData body as text')
-	      } else {
-	        return Promise.resolve(this._bodyText)
-	      }
-	    }
-
-	    if (support.formData) {
-	      this.formData = function() {
-	        return this.text().then(decode)
-	      }
-	    }
-
-	    this.json = function() {
-	      return this.text().then(JSON.parse)
-	    }
-
-	    return this
-	  }
-
-	  // HTTP methods whose capitalization should be normalized
-	  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
-
-	  function normalizeMethod(method) {
-	    var upcased = method.toUpperCase()
-	    return (methods.indexOf(upcased) > -1) ? upcased : method
-	  }
-
-	  function Request(input, options) {
-	    options = options || {}
-	    var body = options.body
-
-	    if (typeof input === 'string') {
-	      this.url = input
-	    } else {
-	      if (input.bodyUsed) {
-	        throw new TypeError('Already read')
-	      }
-	      this.url = input.url
-	      this.credentials = input.credentials
-	      if (!options.headers) {
-	        this.headers = new Headers(input.headers)
-	      }
-	      this.method = input.method
-	      this.mode = input.mode
-	      if (!body && input._bodyInit != null) {
-	        body = input._bodyInit
-	        input.bodyUsed = true
-	      }
-	    }
-
-	    this.credentials = options.credentials || this.credentials || 'omit'
-	    if (options.headers || !this.headers) {
-	      this.headers = new Headers(options.headers)
-	    }
-	    this.method = normalizeMethod(options.method || this.method || 'GET')
-	    this.mode = options.mode || this.mode || null
-	    this.referrer = null
-
-	    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
-	      throw new TypeError('Body not allowed for GET or HEAD requests')
-	    }
-	    this._initBody(body)
-	  }
-
-	  Request.prototype.clone = function() {
-	    return new Request(this, { body: this._bodyInit })
-	  }
-
-	  function decode(body) {
-	    var form = new FormData()
-	    body.trim().split('&').forEach(function(bytes) {
-	      if (bytes) {
-	        var split = bytes.split('=')
-	        var name = split.shift().replace(/\+/g, ' ')
-	        var value = split.join('=').replace(/\+/g, ' ')
-	        form.append(decodeURIComponent(name), decodeURIComponent(value))
-	      }
-	    })
-	    return form
-	  }
-
-	  function parseHeaders(rawHeaders) {
-	    var headers = new Headers()
-	    rawHeaders.split('\r\n').forEach(function(line) {
-	      var parts = line.split(':')
-	      var key = parts.shift().trim()
-	      if (key) {
-	        var value = parts.join(':').trim()
-	        headers.append(key, value)
-	      }
-	    })
-	    return headers
-	  }
-
-	  Body.call(Request.prototype)
-
-	  function Response(bodyInit, options) {
-	    if (!options) {
-	      options = {}
-	    }
-
-	    this.type = 'default'
-	    this.status = 'status' in options ? options.status : 200
-	    this.ok = this.status >= 200 && this.status < 300
-	    this.statusText = 'statusText' in options ? options.statusText : 'OK'
-	    this.headers = new Headers(options.headers)
-	    this.url = options.url || ''
-	    this._initBody(bodyInit)
-	  }
-
-	  Body.call(Response.prototype)
-
-	  Response.prototype.clone = function() {
-	    return new Response(this._bodyInit, {
-	      status: this.status,
-	      statusText: this.statusText,
-	      headers: new Headers(this.headers),
-	      url: this.url
-	    })
-	  }
-
-	  Response.error = function() {
-	    var response = new Response(null, {status: 0, statusText: ''})
-	    response.type = 'error'
-	    return response
-	  }
-
-	  var redirectStatuses = [301, 302, 303, 307, 308]
-
-	  Response.redirect = function(url, status) {
-	    if (redirectStatuses.indexOf(status) === -1) {
-	      throw new RangeError('Invalid status code')
-	    }
-
-	    return new Response(null, {status: status, headers: {location: url}})
-	  }
-
-	  self.Headers = Headers
-	  self.Request = Request
-	  self.Response = Response
-
-	  self.fetch = function(input, init) {
-	    return new Promise(function(resolve, reject) {
-	      var request = new Request(input, init)
-	      var xhr = new XMLHttpRequest()
-
-	      xhr.onload = function() {
-	        var options = {
-	          status: xhr.status,
-	          statusText: xhr.statusText,
-	          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
-	        }
-	        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL')
-	        var body = 'response' in xhr ? xhr.response : xhr.responseText
-	        resolve(new Response(body, options))
-	      }
-
-	      xhr.onerror = function() {
-	        reject(new TypeError('Network request failed'))
-	      }
-
-	      xhr.ontimeout = function() {
-	        reject(new TypeError('Network request failed'))
-	      }
-
-	      xhr.open(request.method, request.url, true)
-
-	      if (request.credentials === 'include') {
-	        xhr.withCredentials = true
-	      }
-
-	      if ('responseType' in xhr && support.blob) {
-	        xhr.responseType = 'blob'
-	      }
-
-	      request.headers.forEach(function(value, name) {
-	        xhr.setRequestHeader(name, value)
-	      })
-
-	      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
-	    })
-	  }
-	  self.fetch.polyfill = true
-	})(typeof self !== 'undefined' ? self : this);
-
+	    };
+	    return MurmurPromise;
+	}();
+	exports.MurmurPromise = MurmurPromise;
 
 /***/ }
 /******/ ]);

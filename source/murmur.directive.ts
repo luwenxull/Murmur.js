@@ -5,7 +5,7 @@ import Connect from "./murmur.connect"
 export interface MurmurDirectiveItf {
     compile(murmur: Murmur, domGenerated: Node): Node
     update(murmur: Murmur, updateData)
-    murmurList?:Murmur[]   
+    murmurList?: Murmur[]
 }
 
 export class MurmurDirective {
@@ -15,15 +15,15 @@ export class MurmurDirective {
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
     public murmurList: Murmur[] = [];
     compile(murmur: Murmur, domGenerated: Node): Node {
-        let dExp = this.directiveExpression,model=murmur.primaryModel;
+        let dExp = this.directiveExpression, model = murmur.primaryModel;
         let fragment = document.createDocumentFragment();
         let repeatSource;
-        if (repeatSource=murmur.extract(dExp)) {
+        if (repeatSource = murmur.extract(dExp)) {
             for (let stateModel of repeatSource) {
                 let clone = Murmur.clone(murmur);
                 clone.$repeatDirective.$repeatEntrance = false;
                 clone.$repeatDirective.$repeatEntity = true;
-                clone.stateModel=stateModel
+                clone.stateModel = stateModel
                 this.murmurList.push(clone);
                 let repeatDom = clone.create(model);
                 fragment.appendChild(repeatDom)
@@ -34,8 +34,8 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
     update(murmur: Murmur, updateData) {
         let repeatSource = murmur.extract(this.directiveExpression);
         let keysNeedToBeUpdate = Object.keys(updateData);
-        for(let currentMurmur of this.murmurList){
-            currentMurmur.primaryModel=murmur.primaryModel
+        for (let currentMurmur of this.murmurList) {
+            currentMurmur.primaryModel = murmur.primaryModel
         }
         if (repeatSource) {
             let repeatSourceLength = repeatSource.length, mmListLength = this.murmurList.length;
@@ -44,7 +44,7 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
                 let currentModel = repeatSource[i];
                 let m = this.murmurList[i];
                 if (m) {
-                    m.stateModel=currentModel;
+                    m.stateModel = currentModel;
                     m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)))
                 }
             }
@@ -98,19 +98,21 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
     }
 }
 
-export class RefDirective extends MurmurDirective implements MurmurDirectiveItf{
+export class RefDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
-        murmur.refClue=this.directiveExpression;
+        murmur.refClue = this.directiveExpression;
         return domGenerated
     }
-    update(){}
+    update() { }
 }
 
-export class MountDirective extends MurmurDirective implements MurmurDirectiveItf{
+export class MountDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
-        let mountCallback=murmur.extract(this.directiveExpression);
-        mountCallback && mountCallback(domGenerated,murmur);
+        let mountCallback = murmur.extract(this.directiveExpression);
+        setTimeout(() => {
+            mountCallback && mountCallback(murmur, domGenerated);
+        })
         return domGenerated
     }
-    update(){}
+    update() { }
 }

@@ -68,7 +68,6 @@
 	app.then(function (app) {
 	    app.ref('footer').refTo(footer);
 	}).then(function (app) {
-	    console.log(app);
 	    app.render({
 	        src: 'http://ggoer.com/favicon.ico',
 	        name: 'luwenxu',
@@ -115,6 +114,8 @@
 	            age: 25,
 	            show: true
 	        }]
+	    }, function (app) {
+	        console.log(app);
 	    });
 	});
 
@@ -166,7 +167,7 @@
 	        this._connected = murmur_creator_1.default().create(this);
 	        return this._connected.dom;
 	    };
-	    Murmur.prototype.render = function (model) {
+	    Murmur.prototype.render = function (model, success) {
 	        var _this = this;
 	        var notResolvedPromise = this.getAllNotResolved();
 	        this.handleNotResolved(notResolvedPromise, function () {
@@ -177,6 +178,9 @@
 	            for (var _i = 0, childNodesArr_1 = childNodesArr; _i < childNodesArr_1.length; _i++) {
 	                var child = childNodesArr_1[_i];
 	                loc.appendChild(child);
+	            }
+	            if (success) {
+	                success.call(null, _this);
 	            }
 	        });
 	    };
@@ -318,6 +322,9 @@
 	        murmurPromise.then(function () {
 	            _this.simpleClone(murmurPromise);
 	        });
+	    };
+	    Murmur.prototype.getNode = function () {
+	        return this._connected.get();
 	    };
 	    Murmur.prototype.simpleClone = function (promise) {
 	        var murmur = promise.murmur;
@@ -868,7 +875,9 @@
 	    }
 	    MountDirective.prototype.compile = function (murmur, domGenerated) {
 	        var mountCallback = murmur.extract(this.directiveExpression);
-	        mountCallback && mountCallback(domGenerated, murmur);
+	        setTimeout(function () {
+	            mountCallback && mountCallback(murmur, domGenerated);
+	        });
 	        return domGenerated;
 	    };
 	    MountDirective.prototype.update = function () {};
