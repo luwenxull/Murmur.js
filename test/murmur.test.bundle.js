@@ -49,11 +49,12 @@
 	    templateUrl: 'template.html',
 	    // template: '<div>{age}</div><img mm-ref="footer"/>',
 	    loc: 'app'
-	}); /*.then(function (tree) {
-	      tree.ref('img')
-	    }).then(function(){
-	      
-	    })*/
+	});
+	/*.then(function (tree) {
+	    tree.ref('img')
+	}).then(function(){
+	    
+	})*/
 
 	let footer = Murmur.prepare({
 	    templateUrl: 'footer.html'
@@ -82,13 +83,30 @@
 	            });
 	        },
 	        click2: function (murmur, e) {
+	            e.stopPropagation();
 	            murmur.update({
 	                location: 'beijing',
 	                cn1: 'green'
 	            });
 	        },
+	        update(murmur, e) {
+	            // e.stopPropogation();
+	            app.update({
+	                cn1: 'blue',
+	                people: [{
+	                    age: 30,
+	                    show: true
+	                }, {
+	                    age: 26,
+	                    show: true
+	                }, {
+	                    age: 27,
+	                    show: true
+	                }]
+	            });
+	        },
 	        mount: function (dom, murmur) {
-	            console.log(dom, murmur);
+	            // console.log(dom, murmur)
 	        },
 	        people: [{
 	            age: 24,
@@ -99,21 +117,6 @@
 	        }]
 	    });
 	});
-	// setTimeout(function () a{
-	//     app().update({
-	//         cn1: 'blue',
-	//         people: [{
-	//             age: 30,
-	//             show: true
-	//         }, {
-	//             age: 26,
-	//             show: true
-	//         }, {
-	//             age: 27,
-	//             show: true
-	//         }]
-	//     });
-	// }, 3000)
 
 /***/ },
 /* 1 */
@@ -812,7 +815,6 @@
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
 	            clone.stateModel = repeatSource[mmListLength++];
-	            // clone.stateModel=updateData;
 	            newDom = clone.create(murmur.primaryModel);
 	            lastDom = this.murmurList[mmListLength - 2]._connected.get();
 	            murmur_tool_1.addSibling(lastDom, newDom);
@@ -939,7 +941,7 @@
 /* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports.wxParser=__webpack_require__(11)['default']();
+	exports.wxParser=__webpack_require__(11)['default'];
 
 /***/ },
 /* 11 */
@@ -949,7 +951,7 @@
 	var wxParser_tool_1 = __webpack_require__(12);
 	var wxParser_type_1 = __webpack_require__(13);
 	function isText(obj) {
-	    return obj.type == wxParser_type_1.TEXTNODE;
+	    return obj && obj.type == wxParser_type_1.TEXTNODE;
 	}
 	var WxDomParser = (function () {
 	    function WxDomParser() {
@@ -999,16 +1001,22 @@
 	    };
 	    WxDomParser.prototype.makeWxTree = function (results) {
 	        var openTreeList = [{ nodeName: 'ROOT', attr: [], children: [] }];
-	        for (var _i = 0, results_1 = results; _i < results_1.length; _i++) {
-	            var node = results_1[_i];
-	            this.make(node, openTreeList);
+	        for (var i = 0; i < results.length; i++) {
+	            this.make(results[i], results[i - 1], results[i + 1], openTreeList);
 	        }
 	        return openTreeList[0];
 	    };
-	    WxDomParser.prototype.make = function (result, openTreeList) {
+	    WxDomParser.prototype.make = function (result, last, next, openTreeList) {
 	        var tree = openTreeList[openTreeList.length - 1];
 	        if (isText(result)) {
-	            tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	            if (!isText(last) && !isText(next)) {
+	                if (wxParser_tool_1.removeAllSpace(result.value) !== '') {
+	                    tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	                }
+	            }
+	            else {
+	                tree.children.push({ nodeName: wxParser_type_1.TEXTNODE, attr: [], children: [result.value] });
+	            }
 	        }
 	        else {
 	            if (result.endTagName) {
@@ -1042,14 +1050,8 @@
 	    };
 	    return WxDomParser;
 	}());
-	var wxDomParserFactory = (function () {
-	    var wxDomParser;
-	    return function () {
-	        return wxDomParser || (wxDomParser = new WxDomParser());
-	    };
-	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = wxDomParserFactory;
+	exports.default = new WxDomParser();
 
 
 /***/ },

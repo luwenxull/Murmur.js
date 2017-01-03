@@ -71,7 +71,6 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
             clone.$repeatDirective.$repeatEntrance = false;
             clone.$repeatDirective.$repeatEntity = true;
             clone.stateModel = repeatSource[mmListLength++];
-            // clone.stateModel=updateData;
             newDom = clone.create(murmur.primaryModel);
             lastDom = this.murmurList[mmListLength - 2]._connected.get();
             addSibling(lastDom, newDom);

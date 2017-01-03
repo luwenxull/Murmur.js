@@ -1,33 +1,34 @@
 let Murmur = require('../Murmur').Murmur
 let app = Murmur.prepare({
-    templateUrl: 'template.html',
-    // template: '<div>{age}</div><img mm-ref="footer"/>',
-    loc: 'app',
-})/*.then(function (tree) {
-    tree.ref('img')
-}).then(function(){
-    
-})*/
+        templateUrl: 'template.html',
+        // template: '<div>{age}</div><img mm-ref="footer"/>',
+        loc: 'app',
+    })
+    /*.then(function (tree) {
+        tree.ref('img')
+    }).then(function(){
+        
+    })*/
 
-let footer=Murmur.prepare({
-    templateUrl:'footer.html'
+let footer = Murmur.prepare({
+    templateUrl: 'footer.html'
 })
-let author=Murmur.prepare({
-    template:'{author}'
+let author = Murmur.prepare({
+    template: '{author}'
 })
-footer.then(function(f){
+footer.then(function (f) {
     f.ref('author').refTo(author)
 })
-app.then(function(app){
+app.then(function (app) {
     app.ref('footer').refTo(footer);
-}).then(function(app){
+}).then(function (app) {
     console.log(app);
     app.render({
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
         cn1: 'red',
         cn2: 'test',
-        author:"big lu",
+        author: "big lu",
         position: 'fe',
         location: "suzhou",
         click: function (murmur, e) {
@@ -36,13 +37,30 @@ app.then(function(app){
             })
         },
         click2: function (murmur, e) {
+            e.stopPropagation();
             murmur.update({
                 location: 'beijing',
                 cn1: 'green'
             })
         },
-        mount:function(dom,murmur){
-            console.log(dom,murmur)
+        update(murmur, e) {
+            // e.stopPropogation();
+            app.update({
+                cn1: 'blue',
+                people: [{
+                    age: 30,
+                    show: true
+                }, {
+                    age: 26,
+                    show: true
+                }, {
+                    age: 27,
+                    show: true
+                }]
+            });
+        },
+        mount: function (dom, murmur) {
+            // console.log(dom, murmur)
         },
         people: [{
             age: 24,
@@ -53,18 +71,3 @@ app.then(function(app){
         }]
     });
 })
-// setTimeout(function () a{
-//     app().update({
-//         cn1: 'blue',
-//         people: [{
-//             age: 30,
-//             show: true
-//         }, {
-//             age: 26,
-//             show: true
-//         }, {
-//             age: 27,
-//             show: true
-//         }]
-//     });
-// }, 3000)
