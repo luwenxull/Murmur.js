@@ -39,6 +39,7 @@ export default class Murmur implements MurmurItf {
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
     public refClue: string
+    public placeholder:string
     public refPromise: MurmurPromise = null;
     public $directives: MurmurDirectiveItf[] = []
     private murmurID: number
@@ -187,7 +188,12 @@ export default class Murmur implements MurmurItf {
         let refMurmur = this.iterateChildren(fn);
         return refMurmur
     }
-    refTo(murmurPromise: MurmurPromise) {
+    holder(placeholder:string){
+        let fn = murmur => murmur.placeholder === placeholder;
+        let refMurmur = this.iterateChildren(fn);
+        return refMurmur
+    }
+    replace(murmurPromise: MurmurPromise) {
         this.refPromise = murmurPromise
         murmurPromise.then(() => {
             this.simpleClone(murmurPromise);
@@ -213,7 +219,7 @@ export default class Murmur implements MurmurItf {
             children = children.map(child => Murmur.convert(child));
             let m = new Murmur(nodeName, attr, children);
             for (let a of attr) {
-                if (a.name == 'mm-ref') m.refClue = a.value
+                if (a.name == 'mm-holder') m.placeholder = a.value
             }
             return m
         }

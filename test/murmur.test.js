@@ -16,12 +16,13 @@ let footer = Murmur.prepare({
 let author = Murmur.prepare({
     template: '{author}'
 })
+app.then(function (app) {
+    app.holder('footer').replace(footer);
+})
 footer.then(function (f) {
-    f.ref('author').refTo(author)
+    f.holder('author').replace(author)
 })
 app.then(function (app) {
-    app.ref('footer').refTo(footer);
-}).then(function (app) {
     app.render({
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
@@ -30,6 +31,7 @@ app.then(function (app) {
         author: "big lu",
         position: 'fe',
         location: "suzhou",
+        ref:"test",
         click: function (murmur, e) {
             murmur.update({
                 src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'

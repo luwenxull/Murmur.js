@@ -62,12 +62,13 @@
 	let author = Murmur.prepare({
 	    template: '{author}'
 	});
+	app.then(function (app) {
+	    app.holder('footer').replace(footer);
+	});
 	footer.then(function (f) {
-	    f.ref('author').refTo(author);
+	    f.holder('author').replace(author);
 	});
 	app.then(function (app) {
-	    app.ref('footer').refTo(footer);
-	}).then(function (app) {
 	    app.render({
 	        src: 'http://ggoer.com/favicon.ico',
 	        name: 'luwenxu',
@@ -76,6 +77,7 @@
 	        author: "big lu",
 	        position: 'fe',
 	        location: "suzhou",
+	        ref: "test",
 	        click: function (murmur, e) {
 	            murmur.update({
 	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -316,7 +318,14 @@
 	        var refMurmur = this.iterateChildren(fn);
 	        return refMurmur;
 	    };
-	    Murmur.prototype.refTo = function (murmurPromise) {
+	    Murmur.prototype.holder = function (placeholder) {
+	        var fn = function (murmur) {
+	            return murmur.placeholder === placeholder;
+	        };
+	        var refMurmur = this.iterateChildren(fn);
+	        return refMurmur;
+	    };
+	    Murmur.prototype.replace = function (murmurPromise) {
 	        var _this = this;
 	        this.refPromise = murmurPromise;
 	        murmurPromise.then(function () {
@@ -346,7 +355,7 @@
 	            var m = new Murmur(nodeName, attr, children);
 	            for (var _i = 0, attr_1 = attr; _i < attr_1.length; _i++) {
 	                var a = attr_1[_i];
-	                if (a.name == 'mm-ref') m.refClue = a.value;
+	                if (a.name == 'mm-holder') m.placeholder = a.value;
 	            }
 	            return m;
 	        }
@@ -861,7 +870,7 @@
 	        return _super.apply(this, arguments) || this;
 	    }
 	    RefDirective.prototype.compile = function (murmur, domGenerated) {
-	        murmur.refClue = this.directiveExpression;
+	        murmur.refClue = murmur.extract(this.directiveExpression);
 	        return domGenerated;
 	    };
 	    RefDirective.prototype.update = function () {};
