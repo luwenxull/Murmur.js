@@ -867,20 +867,21 @@
 	        var dExp = this.directiveExpression;
 	        if (!murmur.extract(dExp)) {
 	            murmur.$ifDirective.shouldReturn = false;
-	            murmur.$ifDirective.spaceHolder = document.createTextNode('');
 	        }
+	        murmur.$ifDirective.spaceHolder = document.createTextNode('');
 	        return domGenerated;
 	    };
 	    IfDirective.prototype.update = function (murmur, updateData) {
 	        var dExp = this.directiveExpression;
-	        if (murmur.extract(dExp)) {
-	            if (murmur.$ifDirective.shouldReturn === false) {
-	                murmur.$ifDirective.shouldReturn = true;
-	                murmur_tool_1.addSibling(murmur.$ifDirective.spaceHolder, murmur.getNode());
-	            }
-	        } else {
-	            murmur.$ifDirective.shouldReturn === false;
+	        if (murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === false) {
+	            murmur.$ifDirective.shouldReturn = true;
+	            murmur_tool_1.addSibling(murmur.$ifDirective.spaceHolder, murmur._connected.getDOM());
 	            murmur.$ifDirective.spaceHolder.remove();
+	        }
+	        if (!murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === true) {
+	            murmur.$ifDirective.shouldReturn = false;
+	            murmur_tool_1.addSibling(murmur._connected.getDOM(), murmur.$ifDirective.spaceHolder);
+	            murmur._connected.getDOM().remove();
 	        }
 	    };
 	    return IfDirective;

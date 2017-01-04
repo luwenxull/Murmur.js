@@ -83,21 +83,22 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
         let dExp = this.directiveExpression;
         if (!murmur.extract(dExp)) {
             murmur.$ifDirective.shouldReturn = false;
-            murmur.$ifDirective.spaceHolder = document.createTextNode('');
         }
+        murmur.$ifDirective.spaceHolder = document.createTextNode('');
         return domGenerated
     }
     update(murmur: Murmur, updateData) {
         let dExp = this.directiveExpression;
-        if (murmur.extract(dExp)) {
-            if (murmur.$ifDirective.shouldReturn === false) {
-                murmur.$ifDirective.shouldReturn = true;
-                addSibling(murmur.$ifDirective.spaceHolder, <Node>murmur.getNode())
-            }
-        }else{
-            addSibling(<Node>murmur.getNode(),murmur.$ifDirective.spaceHolder,);
-            (<HTMLElement>murmur.getNode()).remove();
-            murmur.$ifDirective.shouldReturn === false;
+        if (murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === false) {
+            murmur.$ifDirective.shouldReturn = true;
+            addSibling(murmur.$ifDirective.spaceHolder,murmur._connected.getDOM());
+            murmur.$ifDirective.spaceHolder.remove();
+
+        }
+        if (!murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === true) {
+            murmur.$ifDirective.shouldReturn = false;
+            addSibling(murmur._connected.getDOM(), murmur.$ifDirective.spaceHolder);
+            (<HTMLElement>murmur._connected.getDOM()).remove();
         }
     }
 }

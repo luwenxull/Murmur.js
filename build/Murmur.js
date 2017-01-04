@@ -75,6 +75,7 @@
 	        this.primaryModel = null;
 	        this.stateModel = null;
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
+	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
 	        this.refPromise = null;
 	        this.$directives = [];
@@ -85,21 +86,16 @@
 	    }
 	    Murmur.prototype.create = function (primaryModel) {
 	        this.primaryModel = primaryModel;
-	        this._connected = murmur_creator_1.default().create(this);
-	        return this._connected.dom;
+	        return this._connected = murmur_creator_1.default().create(this);
 	    };
 	    Murmur.prototype.render = function (model, success) {
 	        var _this = this;
 	        var notResolvedPromise = this.getAllNotResolved();
 	        this.handleNotResolved(notResolvedPromise, function () {
-	            var root = _this.create(model);
-	            var childNodes = root.childNodes;
+	            _this.create(model);
+	            var childNodes = _this.getNode().childNodes;
 	            var loc = document.getElementById(_this._loc);
-	            var childNodesArr = Array.prototype.slice.call(childNodes, 0);
-	            for (var _i = 0, childNodesArr_1 = childNodesArr; _i < childNodesArr_1.length; _i++) {
-	                var child = childNodesArr_1[_i];
-	                loc.appendChild(child);
-	            }
+	            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), loc);
 	            if (success) {
 	                success.call(null, _this);
 	            }
@@ -252,7 +248,20 @@
 	        });
 	    };
 	    Murmur.prototype.getNode = function () {
-	        return this._connected.get();
+	        if (this.$repeatDirective.repeatDInstance) {
+	            var nodeArray = [];
+	            for (var _i = 0, _a = this.$repeatDirective.repeatDInstance.murmurList; _i < _a.length; _i++) {
+	                var murmur = _a[_i];
+	                nodeArray.push(murmur.getNode());
+	            }
+	            return nodeArray;
+	        } else {
+	            if (this.$ifDirective.shouldReturn) {
+	                return this._connected.getDOM();
+	            } else {
+	                return this.$ifDirective.spaceHolder;
+	            }
+	        }
 	    };
 	    Murmur.prototype.simpleClone = function (promise) {
 	        var murmur = promise.murmur;
@@ -348,7 +357,6 @@
 	        return connect;
 	    };
 	    MurmurCreator.prototype.checkMMDirective = function (murmur, domGenerated) {
-	        var fragment = document.createDocumentFragment();
 	        for (var _i = 0, _a = murmur.attr; _i < _a.length; _i++) {
 	            var attr = _a[_i];
 	            var name_1 = attr.name,
@@ -357,9 +365,9 @@
 	                return this.compileRepeat(murmur, domGenerated, name_1, value);
 	            }
 	        }
-	        var _loop_1 = function (attr) {
-	            var name_2 = attr.name,
-	                value = attr.value;
+	        var _loop_1 = function (attr1) {
+	            var name_2 = attr1.name,
+	                value = attr1.value;
 	            if (name_2 !== "mm-repeat" && murmur_type_1.MurmurDirectiveTypes[name_2]) {
 	                this_1.compileNormal(murmur, domGenerated, name_2, value);
 	            }
@@ -373,8 +381,8 @@
 	        };
 	        var this_1 = this;
 	        for (var _b = 0, _c = murmur.attr; _b < _c.length; _b++) {
-	            var attr = _c[_b];
-	            _loop_1(attr);
+	            var attr1 = _c[_b];
+	            _loop_1(attr1);
 	        }
 	        return null;
 	    };
@@ -401,7 +409,9 @@
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            parent.appendChild(child.create(murmur.combineModelToChild()));
+	            child.create(murmur.combineModelToChild());
+	            var childDOM = child.getNode();
+	            tools.appendChild(childDOM, parent);
 	        }
 	    };
 	    MurmurCreator.prototype.createTextNode = function (murmur) {
@@ -577,6 +587,22 @@
 	    return val;
 	}
 	exports.removeFirstColon = removeFirstColon;
+	function isNode(obj) {
+	    return obj instanceof Node;
+	}
+	function appendChild(node, parent) {
+	    var childNodesArr = [];
+	    if (node instanceof Array) {
+	        childNodesArr = Array.prototype.slice.call(node, 0);
+	    } else {
+	        childNodesArr.push(node);
+	    }
+	    for (var _i = 0, childNodesArr_1 = childNodesArr; _i < childNodesArr_1.length; _i++) {
+	        var child = childNodesArr_1[_i];
+	        parent.appendChild(child);
+	    }
+	}
+	exports.appendChild = appendChild;
 
 /***/ },
 /* 4 */
@@ -689,7 +715,6 @@
 	    RepeatDirective.prototype.compile = function (murmur, domGenerated) {
 	        var dExp = this.directiveExpression,
 	            model = murmur.primaryModel;
-	        var fragment = document.createDocumentFragment();
 	        var repeatSource;
 	        if (repeatSource = murmur.extract(dExp)) {
 	            for (var _i = 0, repeatSource_1 = repeatSource; _i < repeatSource_1.length; _i++) {
@@ -699,11 +724,10 @@
 	                clone.$repeatDirective.$repeatEntity = true;
 	                clone.stateModel = stateModel;
 	                this.murmurList.push(clone);
-	                var repeatDom = clone.create(model);
-	                fragment.appendChild(repeatDom);
+	                clone.create(model);
 	            }
 	        }
-	        return fragment;
+	        return domGenerated;
 	    };
 	    RepeatDirective.prototype.update = function (murmur, updateData) {
 	        var repeatSource = murmur.extract(this.directiveExpression);
@@ -738,7 +762,7 @@
 	    };
 	    RepeatDirective.prototype.removeExcessMurmur = function (mmListLength, repeatSourceLength) {
 	        while (repeatSourceLength < mmListLength) {
-	            this.murmurList[--mmListLength]._connected.get().remove();
+	            this.murmurList[--mmListLength].getNode().remove();
 	            this.murmurList.pop();
 	        }
 	    };
@@ -750,9 +774,9 @@
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
 	            clone.stateModel = repeatSource[mmListLength++];
-	            newDom = clone.create(murmur.primaryModel);
-	            lastDom = this.murmurList[mmListLength - 2]._connected.get();
-	            murmur_tool_1.addSibling(lastDom, newDom);
+	            clone.create(murmur.primaryModel);
+	            lastDom = this.murmurList[mmListLength - 2].getNode();
+	            murmur_tool_1.addSibling(lastDom, clone.getNode());
 	            this.murmurList.push(clone);
 	        }
 	    };
@@ -767,29 +791,58 @@
 	    IfDirective.prototype.compile = function (murmur, domGenerated) {
 	        var dExp = this.directiveExpression;
 	        if (!murmur.extract(dExp)) {
-	            domGenerated.style.display = 'none';
+	            murmur.$ifDirective.shouldReturn = false;
 	        }
+	        murmur.$ifDirective.spaceHolder = document.createTextNode('');
 	        return domGenerated;
 	    };
 	    IfDirective.prototype.update = function (murmur, updateData) {
 	        var dExp = this.directiveExpression;
-	        var dom = murmur._connected.get();
+	        if (murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === false) {
+	            murmur.$ifDirective.shouldReturn = true;
+	            murmur_tool_1.addSibling(murmur.$ifDirective.spaceHolder, murmur._connected.getDOM());
+	            murmur.$ifDirective.spaceHolder.remove();
+	        }
+	        if (!murmur.extract(dExp) && murmur.$ifDirective.shouldReturn === true) {
+	            murmur.$ifDirective.shouldReturn = false;
+	            murmur_tool_1.addSibling(murmur._connected.getDOM(), murmur.$ifDirective.spaceHolder);
+	            murmur._connected.getDOM().remove();
+	        }
+	    };
+	    return IfDirective;
+	}(MurmurDirective);
+	exports.IfDirective = IfDirective;
+	var ShowDirective = function (_super) {
+	    __extends(ShowDirective, _super);
+	    function ShowDirective() {
+	        return _super.apply(this, arguments) || this;
+	    }
+	    ShowDirective.prototype.compile = function (murmur, domGenerated) {
+	        var dExp = this.directiveExpression;
+	        if (!murmur.extract(dExp)) {
+	            domGenerated.style.display = 'none';
+	        }
+	        return domGenerated;
+	    };
+	    ShowDirective.prototype.update = function (murmur, updateData) {
+	        var dExp = this.directiveExpression;
+	        var dom = murmur.getNode();
 	        if (!murmur.extract(dExp)) {
 	            dom.style.display = 'none';
 	        } else {
 	            dom.style.display = '';
 	        }
 	    };
-	    return IfDirective;
+	    return ShowDirective;
 	}(MurmurDirective);
-	exports.IfDirective = IfDirective;
+	exports.ShowDirective = ShowDirective;
 	var RefDirective = function (_super) {
 	    __extends(RefDirective, _super);
 	    function RefDirective() {
 	        return _super.apply(this, arguments) || this;
 	    }
 	    RefDirective.prototype.compile = function (murmur, domGenerated) {
-	        murmur.refClue = murmur.extract(this.directiveExpression);
+	        murmur.refClue = this.directiveExpression;
 	        return domGenerated;
 	    };
 	    RefDirective.prototype.update = function () {};
@@ -828,7 +881,7 @@
 	    Connect.prototype.isSimpleDom = function () {
 	        return this.type == murmur_type_1.MurmurConnectTypes[0];
 	    };
-	    Connect.prototype.get = function () {
+	    Connect.prototype.getDOM = function () {
 	        return this.dom;
 	    };
 	    return Connect;

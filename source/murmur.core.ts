@@ -35,7 +35,7 @@ export default class Murmur implements MurmurItf {
     public primaryModel = null
     public stateModel = null
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
-    public $ifDirective: { shouldReturn: boolean, spaceHolder: Node } = { shouldReturn: true, spaceHolder: null }
+    public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = { shouldReturn: true, spaceHolder: null }
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
