@@ -1,8 +1,6 @@
-export let MurmurRegexType = {
+export let MurmurNodeType = {
     TEXTNODE: 'TEXTNODE',
-    NODESTART: 'NODESTART',
-    NODEEND: 'NODEEND',
-    NODECLOSESELF: 'NODECLOSESELF'
+    COMMENTNODE:'COMMENTNODE'
 }
 
 export enum MurmurFieldType { ATTR, TEXT }

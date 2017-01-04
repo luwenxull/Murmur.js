@@ -26,7 +26,6 @@ function isMurmur(obj: Murmur | string): obj is Murmur {
     return obj instanceof Murmur
 }
 
-let murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 let extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 export default class Murmur implements MurmurItf {
     public nodeName: string
@@ -246,14 +245,14 @@ export default class Murmur implements MurmurItf {
         let murmurTree: Murmur;
         let murmurPromise = new MurmurPromise(renderObj.template || renderObj.templateUrl);
         if (renderObj.template) {
-            murmurTree = Murmur.convert(wxParser.parseStart(renderObj.template, murmurRegex));
+            murmurTree = Murmur.convert(wxParser.parseStart(renderObj.template));
             murmurTree._loc = renderObj.loc;
             murmurPromise.resolve(murmurTree);
         } else if (renderObj.templateUrl) {
             ajax({
                 url: renderObj.templateUrl,
                 success: function (responseText) {
-                    murmurTree = Murmur.convert(wxParser.parseStart(responseText, murmurRegex));
+                    murmurTree = Murmur.convert(wxParser.parseStart(responseText));
                     murmurTree._loc = renderObj.loc;
                     murmurPromise.resolve(murmurTree);
                 }

@@ -1,7 +1,7 @@
 import Murmur from "./murmur.core"
 import MurmurField from "./murmur.field"
 import * as tools from "./murmur.tool"
-import { MurmurFieldType, MurmurRegexType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./murmur.type"
+import { MurmurFieldType, MurmurNodeType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./murmur.type"
 import * as MurmurDirectives from "./murmur.directive"
 import Connect from "./murmur.connect"
 
@@ -9,8 +9,10 @@ class MurmurCreator {
     private extractValueRegexr: RegExp = /\{:{0,1}\w+\}/g
     create(murmur: Murmur): Connect {
         let connect;
-        if (murmur.nodeName === MurmurRegexType.TEXTNODE) {
+        if (murmur.nodeName === MurmurNodeType.TEXTNODE) {
             connect = new Connect(this.createTextNode(murmur), MurmurConnectTypes[0])
+        } else if (murmur.nodeName===MurmurNodeType.COMMENTNODE) {
+            connect = new Connect(this.createComment(murmur), MurmurConnectTypes[0])
         } else {
             let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
             let compiledDom = this.checkMMDirective(murmur, dom);
@@ -68,8 +70,8 @@ class MurmurCreator {
         for (let child of murmur.children) {
             child = <Murmur>child;
             child.create(murmur.combineModelToChild())
-            let childDOM=child.getNode();
-            tools.appendChild(childDOM,parent);
+            let childDOM = child.getNode();
+            tools.appendChild(childDOM, parent);
         }
     }
     createTextNode(murmur: Murmur) {
@@ -88,6 +90,9 @@ class MurmurCreator {
         } finally {
             return textNode
         }
+    }
+    createComment(murmur):Comment{
+        return document.createComment('test')
     }
 }
 

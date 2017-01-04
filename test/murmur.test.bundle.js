@@ -143,7 +143,6 @@
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
-	var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
@@ -380,14 +379,14 @@
 	        var murmurTree;
 	        var murmurPromise = new murmur_promise_1.MurmurPromise(renderObj.template || renderObj.templateUrl);
 	        if (renderObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template));
 	            murmurTree._loc = renderObj.loc;
 	            murmurPromise.resolve(murmurTree);
 	        } else if (renderObj.templateUrl) {
 	            murmur_tool_1.ajax({
 	                url: renderObj.templateUrl,
 	                success: function (responseText) {
-	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex));
+	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText));
 	                    murmurTree._loc = renderObj.loc;
 	                    murmurPromise.resolve(murmurTree);
 	                }
@@ -416,8 +415,10 @@
 	    }
 	    MurmurCreator.prototype.create = function (murmur) {
 	        var connect;
-	        if (murmur.nodeName === murmur_type_1.MurmurRegexType.TEXTNODE) {
+	        if (murmur.nodeName === murmur_type_1.MurmurNodeType.TEXTNODE) {
 	            connect = new murmur_connect_1.default(this.createTextNode(murmur), murmur_type_1.MurmurConnectTypes[0]);
+	        } else if (murmur.nodeName === murmur_type_1.MurmurNodeType.COMMENTNODE) {
+	            connect = new murmur_connect_1.default(this.createComment(murmur), murmur_type_1.MurmurConnectTypes[0]);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
 	            var compiledDom = this.checkMMDirective(murmur, dom);
@@ -505,6 +506,9 @@
 	        } finally {
 	            return textNode;
 	        }
+	    };
+	    MurmurCreator.prototype.createComment = function (murmur) {
+	        return document.createComment('test');
 	    };
 	    return MurmurCreator;
 	}();
@@ -725,11 +729,9 @@
 
 	"use strict";
 
-	exports.MurmurRegexType = {
+	exports.MurmurNodeType = {
 	    TEXTNODE: 'TEXTNODE',
-	    NODESTART: 'NODESTART',
-	    NODEEND: 'NODEEND',
-	    NODECLOSESELF: 'NODECLOSESELF'
+	    COMMENTNODE: 'COMMENTNODE'
 	};
 	var MurmurFieldType;
 	(function (MurmurFieldType) {
@@ -1020,7 +1022,7 @@
 	}
 	var WxDomParser = (function () {
 	    function WxDomParser() {
-	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>/g;
+	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})|(<!--)|(-->)/g;
 	        this.attrRegex = /[\w\-]+=['"][\s\S]*?['"]/g;
 	    }
 	    WxDomParser.prototype.parseStart = function (htmlStr, optionRegex) {
@@ -1033,7 +1035,7 @@
 	        var result;
 	        var allMatches = [], nextIndex = 0;
 	        while (result = optionRegex.exec(htmlStr)) {
-	            var match = result[0], startTag = result[1], startTagName = result[2], attr = result[3], endSelf = result[4], endTagName = result[5], exp = result[6];
+	            var match = result[0], startTag = result[1], startTagName = result[2], attr = result[3], endSelf = result[4], endTagName = result[5], exp = result[6], startComment = result[7], endComment = result[8];
 	            var index = result.index, length_1 = match.length;
 	            if (index > nextIndex) {
 	                allMatches.push({
@@ -1055,11 +1057,17 @@
 	            else if (endTagName) {
 	                type = wxParser_type_1.NODEEND;
 	            }
+	            else if (startComment) {
+	                type = wxParser_type_1.COMMENTSTART;
+	            }
+	            else if (endComment) {
+	                type = wxParser_type_1.COMMENTEND;
+	            }
 	            else {
 	                type = wxParser_type_1.NODECLOSESELF;
 	            }
 	            allMatches.push({
-	                type: type, match: match, attr: attr, startTag: startTag, startTagName: startTagName, endSelf: endSelf, endTagName: endTagName, index: index, length: length_1
+	                type: type, match: match, attr: attr, startTag: startTag, startTagName: startTagName, endSelf: endSelf, endTagName: endTagName, startComment: startComment, endComment: endComment, index: index, length: length_1
 	            });
 	        }
 	        return allMatches;
@@ -1084,18 +1092,25 @@
 	            }
 	        }
 	        else {
-	            if (result.endTagName) {
+	            if (result.endTagName || result.endComment) {
 	                openTreeList.pop();
 	            }
 	            else {
-	                var nodeName = result.startTagName;
+	                var nodeName = result.startTagName, startComment = result.startComment;
 	                if (result.endSelf) {
 	                    tree.children.push({ nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] });
 	                }
-	                else if (nodeName) {
-	                    var newOpenTree = { nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] };
-	                    tree.children.push(newOpenTree);
-	                    openTreeList.push(newOpenTree);
+	                else {
+	                    if (nodeName) {
+	                        var newOpenTree = { nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] };
+	                        tree.children.push(newOpenTree);
+	                        openTreeList.push(newOpenTree);
+	                    }
+	                    if (startComment) {
+	                        var newOpenTree = { nodeName: wxParser_type_1.COMMENTNODE, attr: [], children: [] };
+	                        tree.children.push(newOpenTree);
+	                        openTreeList.push(newOpenTree);
+	                    }
 	                }
 	            }
 	        }
@@ -1163,9 +1178,12 @@
 
 	"use strict";
 	exports.TEXTNODE = 'TEXTNODE';
+	exports.COMMENTNODE = 'COMMENTNODE';
 	exports.NODESTART = 'NODESTART';
 	exports.NODEEND = 'NODEEND';
 	exports.NODECLOSESELF = 'NODECLOSESELF';
+	exports.COMMENTSTART = 'COMMENTSTART';
+	exports.COMMENTEND = 'COMMENTEND';
 
 
 /***/ },
