@@ -1,6 +1,6 @@
 import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
-import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax } from "./murmur.tool"
+import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax, appendChild } from "./murmur.tool"
 import { MurmurDirectiveItf, RepeatDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
@@ -35,11 +35,12 @@ export default class Murmur implements MurmurItf {
     public primaryModel = null
     public stateModel = null
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
+    public $ifDerectiveHasReturn: boolean = true
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
     public refClue: string
-    public placeholder:string
+    public placeholder: string
     public refPromise: MurmurPromise = null;
     public $directives: MurmurDirectiveItf[] = []
     private murmurID: number
@@ -49,21 +50,17 @@ export default class Murmur implements MurmurItf {
         this.children = children;
         this.murmurID = murmurID++;
     }
-    create(primaryModel): Node {
+    create(primaryModel): Connect {
         this.primaryModel = primaryModel;
-        this._connected = MurmurCreatorFactory().create(this);
-        return this._connected.dom
+        return this._connected = MurmurCreatorFactory().create(this);
     }
     render(model, success?: (murmur: Murmur) => void) {
         let notResolvedPromise = this.getAllNotResolved();
         this.handleNotResolved(notResolvedPromise, () => {
-            let root = this.create(model);
-            let childNodes = root.childNodes;
+            this.create(model);
+            let childNodes = (<Node>this.getNode()).childNodes;
             let loc = document.getElementById(this._loc);
-            let childNodesArr = Array.prototype.slice.call(childNodes, 0)
-            for (let child of childNodesArr) {
-                loc.appendChild(child)
-            }
+            appendChild(Array.prototype.slice.call(childNodes,0), loc);
             if (success) {
                 success.call(null, this)
             }
@@ -188,7 +185,7 @@ export default class Murmur implements MurmurItf {
         let refMurmur = this.iterateChildren(fn);
         return refMurmur
     }
-    holder(placeholder:string){
+    holder(placeholder: string) {
         let fn = murmur => murmur.placeholder === placeholder;
         let refMurmur = this.iterateChildren(fn);
         return refMurmur
@@ -199,8 +196,16 @@ export default class Murmur implements MurmurItf {
             this.simpleClone(murmurPromise);
         })
     }
-    getNode(): Node {
-        return this._connected.get()
+    getNode(): Node | Node[] {
+        if (this.$repeatDirective.repeatDInstance) {
+            let nodeArray = [];
+            for (let murmur of this.$repeatDirective.repeatDInstance.murmurList) {
+                nodeArray.push(murmur.getNode())
+            }
+            return nodeArray
+        } else {
+            return this._connected.getDOM()
+        }
     }
     simpleClone(promise: MurmurPromise) {
         let murmur = promise.murmur;

@@ -15,7 +15,7 @@ class MurmurCreator {
             let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
             let compiledDom = this.checkMMDirective(murmur, dom);
             if (compiledDom) {
-                connect = new Connect(compiledDom, MurmurConnectTypes[1])
+                connect = new Connect(compiledDom, MurmurConnectTypes[1],true)
             } else {
                 this.attachAttr(<HTMLElement>dom, murmur);
                 this.appendChildren(<HTMLElement>dom, murmur);
@@ -25,15 +25,14 @@ class MurmurCreator {
         return connect;
     }
     checkMMDirective(murmur: Murmur, domGenerated: Node): Node {
-        let fragment: Node = document.createDocumentFragment();
         for (let attr of murmur.attr) {
             let {name, value} = attr;
             if (name == 'mm-repeat' && murmur.$repeatDirective.$repeatEntrance) {
                 return this.compileRepeat(murmur, domGenerated, name, value)
             }
         }
-        for (let attr of murmur.attr) {
-            let {name, value} = attr;
+        for (let attr1 of murmur.attr) {
+            let {name, value} = attr1;
             if (name !== "mm-repeat" && MurmurDirectiveTypes[name]) {
                 this.compileNormal(murmur, domGenerated, name, value)
             }
@@ -68,7 +67,9 @@ class MurmurCreator {
     appendChildren(parent: HTMLElement, murmur: Murmur): void {
         for (let child of murmur.children) {
             child = <Murmur>child;
-            parent.appendChild(child.create(murmur.combineModelToChild()))
+            child.create(murmur.combineModelToChild())
+            let childDOM=child.getNode();
+            tools.appendChild(childDOM,parent);
         }
     }
     createTextNode(murmur: Murmur) {
@@ -87,7 +88,6 @@ class MurmurCreator {
         } finally {
             return textNode
         }
-
     }
 }
 

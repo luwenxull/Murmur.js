@@ -1,6 +1,6 @@
 import Murmur from "./murmur.core"
 import MurmurField from "./murmur.field"
-export {ajax} from "./murmur.tools.ajax"
+export { ajax } from "./murmur.tools.ajax"
 /**
  * 判断是否是简单值
  * 
@@ -124,9 +124,25 @@ export function addSibling(node: Node, refrenceNode: Node): void {
  * @param {string} val
  * @returns {string}
  */
-export function removeFirstColon(val:string):string{
-    if(val[0]===':'){
+export function removeFirstColon(val: string): string {
+    if (val[0] === ':') {
         return val.slice(1)
     }
     return val
+}
+
+function isNode(obj: Node | NodeList): obj is Node {
+    return obj instanceof Node
+}
+
+export function appendChild(node: Node | Node[], parent: Node) {
+    let childNodesArr = [];
+    if (node instanceof Array) {
+        childNodesArr = Array.prototype.slice.call(node, 0);
+    } else {
+        childNodesArr.push(node)
+    }
+    for (let child of childNodesArr) {
+        parent.appendChild(child)
+    }
 }

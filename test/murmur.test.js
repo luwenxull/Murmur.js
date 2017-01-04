@@ -4,11 +4,6 @@ let app = Murmur.prepare({
         // template: '<div>{age}</div><img mm-ref="footer"/>',
         loc: 'app',
     })
-    /*.then(function (tree) {
-        tree.ref('img')
-    }).then(function(){
-        
-    })*/
 
 let footer = Murmur.prepare({
     templateUrl: 'footer.html'
@@ -60,7 +55,7 @@ app.then(function (app) {
                 }]
             });
         },
-        mount: function (dom, murmur) {
+        mount: function (murmur) {
             // console.log(dom, murmur)
         },
         people: [{
@@ -68,7 +63,7 @@ app.then(function (app) {
             show: true
         }, {
             age: 25,
-            show: true
+            // show: true
         }]
     },function(app){
         console.log(app);
