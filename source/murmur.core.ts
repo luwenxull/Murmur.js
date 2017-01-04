@@ -35,7 +35,7 @@ export default class Murmur implements MurmurItf {
     public primaryModel = null
     public stateModel = null
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
-    public $ifDerectiveHasReturn: boolean = true
+    public $ifDirective: { shouldReturn: boolean, spaceHolder: Node } = { shouldReturn: true, spaceHolder: null }
     public _connected: Connect
     public _fields: { [p: string]: MurmurField } = {}
     public _loc: string
@@ -60,7 +60,7 @@ export default class Murmur implements MurmurItf {
             this.create(model);
             let childNodes = (<Node>this.getNode()).childNodes;
             let loc = document.getElementById(this._loc);
-            appendChild(Array.prototype.slice.call(childNodes,0), loc);
+            appendChild(Array.prototype.slice.call(childNodes, 0), loc);
             if (success) {
                 success.call(null, this)
             }
@@ -204,7 +204,11 @@ export default class Murmur implements MurmurItf {
             }
             return nodeArray
         } else {
-            return this._connected.getDOM()
+            if (this.$ifDirective.shouldReturn) {
+                return this._connected.getDOM()
+            } else {
+                return this.$ifDirective.spaceHolder
+            }
         }
     }
     simpleClone(promise: MurmurPromise) {

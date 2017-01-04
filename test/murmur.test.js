@@ -48,10 +48,10 @@ app.then(function (app) {
                     show: true
                 }, {
                     age: 26,
-                    show: true
+                    show: false
                 }, {
                     age: 27,
-                    show: true
+                    show: false
                 }]
             });
         },

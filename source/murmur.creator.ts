@@ -15,7 +15,7 @@ class MurmurCreator {
             let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
             let compiledDom = this.checkMMDirective(murmur, dom);
             if (compiledDom) {
-                connect = new Connect(compiledDom, MurmurConnectTypes[1],true)
+                connect = new Connect(compiledDom, MurmurConnectTypes[1])
             } else {
                 this.attachAttr(<HTMLElement>dom, murmur);
                 this.appendChildren(<HTMLElement>dom, murmur);

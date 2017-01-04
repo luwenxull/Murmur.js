@@ -1,5 +1,5 @@
 import Murmur from "./murmur.core"
-import { removeAllSpace, addSibling,appendChild } from "./murmur.tool"
+import { removeAllSpace, addSibling, appendChild } from "./murmur.tool"
 import Connect from "./murmur.connect"
 
 export interface MurmurDirectiveItf {
@@ -70,9 +70,9 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
             clone.$repeatDirective.$repeatEntrance = false;
             clone.$repeatDirective.$repeatEntity = true;
             clone.stateModel = repeatSource[mmListLength++];
-            newDom = clone.create(murmur.primaryModel);
+            clone.create(murmur.primaryModel);
             lastDom = this.murmurList[mmListLength - 2].getNode();
-            addSibling(lastDom, newDom);
+            addSibling(lastDom, <Node>clone.getNode());
             this.murmurList.push(clone);
         }
     }
@@ -82,8 +82,31 @@ export class IfDirective extends MurmurDirective implements MurmurDirectiveItf {
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
         let dExp = this.directiveExpression;
         if (!murmur.extract(dExp)) {
-            // domGenerated.style.display = 'none'
-            murmur.$ifDerectiveHasReturn=false
+            murmur.$ifDirective.shouldReturn = false;
+            murmur.$ifDirective.spaceHolder = document.createTextNode('');
+        }
+        return domGenerated
+    }
+    update(murmur: Murmur, updateData) {
+        let dExp = this.directiveExpression;
+        if (murmur.extract(dExp)) {
+            if (murmur.$ifDirective.shouldReturn === false) {
+                murmur.$ifDirective.shouldReturn = true;
+                addSibling(murmur.$ifDirective.spaceHolder, <Node>murmur.getNode())
+            }
+        }else{
+            addSibling(<Node>murmur.getNode(),murmur.$ifDirective.spaceHolder,);
+            (<HTMLElement>murmur.getNode()).remove();
+            murmur.$ifDirective.shouldReturn === false;
+        }
+    }
+}
+
+export class ShowDirective extends MurmurDirective implements MurmurDirectiveItf {
+    compile(murmur: Murmur, domGenerated: HTMLElement): Node {
+        let dExp = this.directiveExpression;
+        if (!murmur.extract(dExp)) {
+            domGenerated.style.display = 'none'
         }
         return domGenerated
     }
