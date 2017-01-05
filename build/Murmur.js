@@ -68,12 +68,10 @@
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
-	var murmurRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})/g;
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
-	        this.primaryModel = null;
-	        this.stateModel = null;
+	        this.model = { exotic: null, state: null };
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
@@ -84,18 +82,21 @@
 	        this.children = children;
 	        this.murmurID = murmurID++;
 	    }
-	    Murmur.prototype.create = function (primaryModel) {
-	        this.primaryModel = primaryModel;
+	    Murmur.prototype.create = function (exotic) {
+	        if (exotic === void 0) {
+	            exotic = null;
+	        }
+	        this.model.exotic = exotic;
 	        return this._connected = murmur_creator_1.default().create(this);
 	    };
-	    Murmur.prototype.render = function (model, success) {
+	    Murmur.prototype.render = function (loc, success) {
 	        var _this = this;
 	        var notResolvedPromise = this.getAllNotResolved();
 	        this.handleNotResolved(notResolvedPromise, function () {
-	            _this.create(model);
+	            _this.create();
 	            var childNodes = _this.getNode().childNodes;
-	            var loc = document.getElementById(_this._loc);
-	            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), loc);
+	            var root = document.getElementById(loc);
+	            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), root);
 	            if (success) {
 	                success.call(null, _this);
 	            }
@@ -141,7 +142,8 @@
 	        }
 	    };
 	    Murmur.prototype.update = function (updateObj) {
-	        this.stateModel = Object.assign({}, this.stateModel || {}, updateObj);
+	        this.model.state = this.model.state || {};
+	        Object.assign(this.model.state, updateObj);
 	        this.dispatchUpdate(updateObj, Object.keys(updateObj));
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
@@ -154,7 +156,7 @@
 	            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
 	                var child = _c[_b];
 	                if (isMurmur(child)) {
-	                    child.primaryModel = this.combineModelToChild();
+	                    child.model.exotic = this.combineModel();
 	                    child.dispatchUpdate(updateObj, keysNeedToBeUpdate);
 	                }
 	            }
@@ -188,21 +190,16 @@
 	        return copyVal;
 	    };
 	    Murmur.prototype.extract = function (field) {
+	        var model = this.combineModel(),
+	            exotic = this.model.exotic;
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
-	            return this.primaryModel[field.slice(1)];
+	            return exotic[field.slice(1)];
 	        } else {
-	            if (this.stateModel && field in this.stateModel) {
-	                return (this.stateModel || this.primaryModel)[field];
-	            } else {
-	                return this.primaryModel[field];
-	            }
+	            return model[field];
 	        }
 	    };
-	    Murmur.prototype.combineModelToChild = function () {
-	        if (this.stateModel) {
-	            return Object.assign({}, this.primaryModel, this.stateModel);
-	        }
-	        return this.primaryModel;
+	    Murmur.prototype.combineModel = function () {
+	        return Object.assign({}, this.model.exotic || {}, this.model.state || {});
 	    };
 	    Murmur.prototype.iterateChildren = function (ifBreak) {
 	        if (ifBreak(this)) {
@@ -244,7 +241,7 @@
 	        var _this = this;
 	        this.refPromise = murmurPromise;
 	        murmurPromise.then(function () {
-	            _this.simpleClone(murmurPromise);
+	            _this.simpleClone(murmurPromise.murmur);
 	        });
 	    };
 	    Murmur.prototype.getNode = function () {
@@ -263,14 +260,13 @@
 	            }
 	        }
 	    };
-	    Murmur.prototype.simpleClone = function (promise) {
-	        var murmur = promise.murmur;
-	        var source = murmur.children[0];
-	        if (isMurmur(source)) {
-	            this.children = source.children;
-	            this.attr = source.attr;
-	            this.nodeName = source.nodeName;
-	        } else {}
+	    Murmur.prototype.simpleClone = function (murmur) {
+	        if (isMurmur(murmur)) {
+	            this.children = murmur.children;
+	            this.attr = murmur.attr;
+	            this.nodeName = murmur.nodeName;
+	            this.model.state = murmur.model.state;
+	        }
 	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {
@@ -301,19 +297,19 @@
 	        }
 	        return murmur;
 	    };
-	    Murmur.prepare = function (renderObj, ready) {
+	    Murmur.prepare = function (prepareObj) {
 	        var murmurTree;
-	        var murmurPromise = new murmur_promise_1.MurmurPromise(renderObj.template || renderObj.templateUrl);
-	        if (renderObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template, murmurRegex));
-	            murmurTree._loc = renderObj.loc;
+	        var murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
+	        if (prepareObj.template) {
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
+	            prepareObj.model && (murmurTree.model.state = prepareObj.model);
 	            murmurPromise.resolve(murmurTree);
-	        } else if (renderObj.templateUrl) {
+	        } else if (prepareObj.templateUrl) {
 	            murmur_tool_1.ajax({
-	                url: renderObj.templateUrl,
+	                url: prepareObj.templateUrl,
 	                success: function (responseText) {
-	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText, murmurRegex));
-	                    murmurTree._loc = renderObj.loc;
+	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText));
+	                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
 	                    murmurPromise.resolve(murmurTree);
 	                }
 	            });
@@ -341,8 +337,10 @@
 	    }
 	    MurmurCreator.prototype.create = function (murmur) {
 	        var connect;
-	        if (murmur.nodeName === murmur_type_1.MurmurRegexType.TEXTNODE) {
+	        if (murmur.nodeName === murmur_type_1.MurmurNodeType.TEXTNODE) {
 	            connect = new murmur_connect_1.default(this.createTextNode(murmur), murmur_type_1.MurmurConnectTypes[0]);
+	        } else if (murmur.nodeName === murmur_type_1.MurmurNodeType.COMMENTNODE) {
+	            connect = new murmur_connect_1.default(this.createComment(murmur), murmur_type_1.MurmurConnectTypes[0]);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
 	            var compiledDom = this.checkMMDirective(murmur, dom);
@@ -409,7 +407,7 @@
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            child.create(murmur.combineModelToChild());
+	            child.create(murmur.combineModel());
 	            var childDOM = child.getNode();
 	            tools.appendChild(childDOM, parent);
 	        }
@@ -430,6 +428,9 @@
 	        } finally {
 	            return textNode;
 	        }
+	    };
+	    MurmurCreator.prototype.createComment = function (murmur) {
+	        return document.createComment('test');
 	    };
 	    return MurmurCreator;
 	}();
@@ -513,17 +514,6 @@
 	    return val === null || val === undefined;
 	}
 	exports.isNothing = isNothing;
-	/**
-	 * 设置默认值并返回
-	 *
-	 * @param {any} val
-	 * @param {any} expected
-	 * @returns
-	 */
-	function setDefault(val, expected) {
-	    return isNothing(val) ? val = expected : val;
-	}
-	exports.setDefault = setDefault;
 	/**
 	 * 去除等号两侧的空格
 	 *
@@ -650,11 +640,9 @@
 
 	"use strict";
 
-	exports.MurmurRegexType = {
+	exports.MurmurNodeType = {
 	    TEXTNODE: 'TEXTNODE',
-	    NODESTART: 'NODESTART',
-	    NODEEND: 'NODEEND',
-	    NODECLOSESELF: 'NODECLOSESELF'
+	    COMMENTNODE: 'COMMENTNODE'
 	};
 	var MurmurFieldType;
 	(function (MurmurFieldType) {
@@ -713,8 +701,7 @@
 	        return _this;
 	    }
 	    RepeatDirective.prototype.compile = function (murmur, domGenerated) {
-	        var dExp = this.directiveExpression,
-	            model = murmur.primaryModel;
+	        var dExp = this.directiveExpression;
 	        var repeatSource;
 	        if (repeatSource = murmur.extract(dExp)) {
 	            for (var _i = 0, repeatSource_1 = repeatSource; _i < repeatSource_1.length; _i++) {
@@ -722,9 +709,9 @@
 	                var clone = murmur_core_1.default.clone(murmur);
 	                clone.$repeatDirective.$repeatEntrance = false;
 	                clone.$repeatDirective.$repeatEntity = true;
-	                clone.stateModel = stateModel;
+	                clone.model.state = stateModel;
 	                this.murmurList.push(clone);
-	                clone.create(model);
+	                clone.create(murmur.model.exotic);
 	            }
 	        }
 	        return domGenerated;
@@ -734,18 +721,18 @@
 	        var keysNeedToBeUpdate = Object.keys(updateData);
 	        for (var _i = 0, _a = this.murmurList; _i < _a.length; _i++) {
 	            var currentMurmur = _a[_i];
-	            currentMurmur.primaryModel = murmur.primaryModel;
+	            currentMurmur.model.exotic = murmur.model.exotic;
 	        }
 	        if (repeatSource) {
 	            var repeatSourceLength = repeatSource.length,
 	                mmListLength = this.murmurList.length;
 	            this.lengthCheck(repeatSource, murmur, updateData);
 	            for (var i = 0; i < repeatSourceLength; i++) {
-	                var currentModel = repeatSource[i];
+	                var newState = repeatSource[i];
 	                var m = this.murmurList[i];
 	                if (m) {
-	                    m.stateModel = currentModel;
-	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)));
+	                    m.model.state = newState;
+	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(newState)));
 	                }
 	            }
 	        }
@@ -773,8 +760,8 @@
 	                lastDom = void 0;
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
-	            clone.stateModel = repeatSource[mmListLength++];
-	            clone.create(murmur.primaryModel);
+	            clone.model.state = repeatSource[mmListLength++];
+	            clone.create(murmur.model.exotic);
 	            lastDom = this.murmurList[mmListLength - 2].getNode();
 	            murmur_tool_1.addSibling(lastDom, clone.getNode());
 	            this.murmurList.push(clone);
@@ -945,7 +932,7 @@
 	}
 	var WxDomParser = (function () {
 	    function WxDomParser() {
-	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>/g;
+	        this.nodeRegex = /(<(\w+)\s*([\s\S]*?)(\/){0,1}>)|<\/(\w+)>|(\{:{0,1}\w+?\})|(<!--)|(-->)/g;
 	        this.attrRegex = /[\w\-]+=['"][\s\S]*?['"]/g;
 	    }
 	    WxDomParser.prototype.parseStart = function (htmlStr, optionRegex) {
@@ -958,7 +945,7 @@
 	        var result;
 	        var allMatches = [], nextIndex = 0;
 	        while (result = optionRegex.exec(htmlStr)) {
-	            var match = result[0], startTag = result[1], startTagName = result[2], attr = result[3], endSelf = result[4], endTagName = result[5], exp = result[6];
+	            var match = result[0], startTag = result[1], startTagName = result[2], attr = result[3], endSelf = result[4], endTagName = result[5], exp = result[6], startComment = result[7], endComment = result[8];
 	            var index = result.index, length_1 = match.length;
 	            if (index > nextIndex) {
 	                allMatches.push({
@@ -980,11 +967,17 @@
 	            else if (endTagName) {
 	                type = wxParser_type_1.NODEEND;
 	            }
+	            else if (startComment) {
+	                type = wxParser_type_1.COMMENTSTART;
+	            }
+	            else if (endComment) {
+	                type = wxParser_type_1.COMMENTEND;
+	            }
 	            else {
 	                type = wxParser_type_1.NODECLOSESELF;
 	            }
 	            allMatches.push({
-	                type: type, match: match, attr: attr, startTag: startTag, startTagName: startTagName, endSelf: endSelf, endTagName: endTagName, index: index, length: length_1
+	                type: type, match: match, attr: attr, startTag: startTag, startTagName: startTagName, endSelf: endSelf, endTagName: endTagName, startComment: startComment, endComment: endComment, index: index, length: length_1
 	            });
 	        }
 	        return allMatches;
@@ -1009,18 +1002,25 @@
 	            }
 	        }
 	        else {
-	            if (result.endTagName) {
+	            if (result.endTagName || result.endComment) {
 	                openTreeList.pop();
 	            }
 	            else {
-	                var nodeName = result.startTagName;
+	                var nodeName = result.startTagName, startComment = result.startComment;
 	                if (result.endSelf) {
 	                    tree.children.push({ nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] });
 	                }
-	                else if (nodeName) {
-	                    var newOpenTree = { nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] };
-	                    tree.children.push(newOpenTree);
-	                    openTreeList.push(newOpenTree);
+	                else {
+	                    if (nodeName) {
+	                        var newOpenTree = { nodeName: nodeName, attr: this.getAttributes(result.attr), children: [] };
+	                        tree.children.push(newOpenTree);
+	                        openTreeList.push(newOpenTree);
+	                    }
+	                    if (startComment) {
+	                        var newOpenTree = { nodeName: wxParser_type_1.COMMENTNODE, attr: [], children: [] };
+	                        tree.children.push(newOpenTree);
+	                        openTreeList.push(newOpenTree);
+	                    }
 	                }
 	            }
 	        }
@@ -1088,9 +1088,12 @@
 
 	"use strict";
 	exports.TEXTNODE = 'TEXTNODE';
+	exports.COMMENTNODE = 'COMMENTNODE';
 	exports.NODESTART = 'NODESTART';
 	exports.NODEEND = 'NODEEND';
 	exports.NODECLOSESELF = 'NODECLOSESELF';
+	exports.COMMENTSTART = 'COMMENTSTART';
+	exports.COMMENTEND = 'COMMENTEND';
 
 
 /***/ },

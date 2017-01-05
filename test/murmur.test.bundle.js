@@ -312,7 +312,7 @@
 	        var _this = this;
 	        this.refPromise = murmurPromise;
 	        murmurPromise.then(function () {
-	            _this.simpleClone(murmurPromise);
+	            _this.simpleClone(murmurPromise.murmur);
 	        });
 	    };
 	    Murmur.prototype.getNode = function () {
@@ -331,14 +331,13 @@
 	            }
 	        }
 	    };
-	    Murmur.prototype.simpleClone = function (promise) {
-	        var murmur = promise.murmur;
-	        var source = murmur.children[0];
-	        if (isMurmur(source)) {
-	            this.children = source.children;
-	            this.attr = source.attr;
-	            this.nodeName = source.nodeName;
-	        } else {}
+	    Murmur.prototype.simpleClone = function (murmur) {
+	        if (isMurmur(murmur)) {
+	            this.children = murmur.children;
+	            this.attr = murmur.attr;
+	            this.nodeName = murmur.nodeName;
+	            this.model.state = murmur.model.state;
+	        }
 	    };
 	    Murmur.convert = function (obj) {
 	        if (obj.nodeName) {

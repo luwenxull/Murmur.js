@@ -185,7 +185,7 @@ export default class Murmur implements MurmurItf {
     replace(murmurPromise: MurmurPromise) {
         this.refPromise = murmurPromise
         murmurPromise.then(() => {
-            this.simpleClone(murmurPromise);
+            this.simpleClone(murmurPromise.murmur);
         })
     }
     getNode(): Node | Node[] {
@@ -203,15 +203,12 @@ export default class Murmur implements MurmurItf {
             }
         }
     }
-    simpleClone(promise: MurmurPromise) {
-        let murmur = promise.murmur;
-        let source = murmur.children[0];
-        if (isMurmur(source)) {
-            this.children = source.children;
-            this.attr = source.attr;
-            this.nodeName = source.nodeName;
-        } else {
-            // this=source
+    simpleClone(murmur:Murmur) {
+        if (isMurmur(murmur)) {
+            this.children = murmur.children;
+            this.attr = murmur.attr;
+            this.nodeName = murmur.nodeName;
+            this.model.state=murmur.model.state;
         }
     }
     static convert(obj): Murmur {
