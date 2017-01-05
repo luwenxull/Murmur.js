@@ -859,7 +859,7 @@
 	    }
 	    MountDirective.prototype.compile = function (murmur, domGenerated) {
 	        var mountCallback = murmur.extract(this.directiveExpression);
-	        this.callbacks.push(mountCallback);
+	        mountCallback && this.callbacks.push(mountCallback);
 	        murmur.$mountDirective = this;
 	        return domGenerated;
 	    };

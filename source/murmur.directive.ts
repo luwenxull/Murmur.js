@@ -133,7 +133,7 @@ export class MountDirective extends MurmurDirective implements MurmurDirectiveIt
     public callbacks=[];
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
         let mountCallback = murmur.extract(this.directiveExpression);
-        this.callbacks.push(mountCallback);
+        mountCallback && this.callbacks.push(mountCallback);
         murmur.$mountDirective=this;
         return domGenerated
     }
