@@ -15,6 +15,9 @@ class MurmurCreator {
             connect = new Connect(this.createComment(murmur), MurmurConnectTypes[0])
         } else {
             let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
+            if(murmur.nodeName==='ROOT'){
+                dom=document.createDocumentFragment();
+            }
             let compiledDom = this.checkMMDirective(murmur, dom);
             if (compiledDom) {
                 connect = new Connect(compiledDom, MurmurConnectTypes[1])

@@ -55,6 +55,7 @@
 	        position: 'fe',
 	        location: "suzhou",
 	        author: "somebody",
+	        date: 'today',
 	        click: function (murmur, e) {
 	            murmur.update({
 	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -98,7 +99,7 @@
 	let footer = Murmur.prepare({
 	    templateUrl: 'footer.html',
 	    model: {
-	        // author: 'luwenxu'
+	        author: 'luwenxu'
 	    }
 	});
 
@@ -312,8 +313,9 @@
 	    Murmur.prototype.replace = function (murmurPromise) {
 	        var _this = this;
 	        this.refPromise = murmurPromise;
-	        murmurPromise.then(function () {
-	            _this.simpleClone(murmurPromise.murmur);
+	        murmurPromise.then(function (murmur) {
+	            _this.children = [murmur];
+	            // this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
 	        });
 	    };
 	    Murmur.prototype.getNode = function () {
@@ -330,14 +332,6 @@
 	            } else {
 	                return this.$ifDirective.spaceHolder;
 	            }
-	        }
-	    };
-	    Murmur.prototype.simpleClone = function (murmur) {
-	        if (isMurmur(murmur)) {
-	            this.children = murmur.children;
-	            this.attr = murmur.attr;
-	            this.nodeName = murmur.nodeName;
-	            this.model.state = Object.assign(this.model.state || {}, murmur.model.state || {});
 	        }
 	    };
 	    Murmur.convert = function (obj) {
@@ -415,6 +409,9 @@
 	            connect = new murmur_connect_1.default(this.createComment(murmur), murmur_type_1.MurmurConnectTypes[0]);
 	        } else {
 	            var dom = document.createElement(murmur.nodeName);
+	            if (murmur.nodeName === 'ROOT') {
+	                dom = document.createDocumentFragment();
+	            }
 	            var compiledDom = this.checkMMDirective(murmur, dom);
 	            if (compiledDom) {
 	                connect = new murmur_connect_1.default(compiledDom, murmur_type_1.MurmurConnectTypes[1]);
@@ -1185,7 +1182,7 @@
 	    MurmurPromise.prototype.then = function (fn) {
 	        this.success.push(fn);
 	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
-	            fn(this.murmur);
+	            fn.call(this, this.murmur);
 	        }
 	        ;
 	        return this;

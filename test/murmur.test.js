@@ -9,6 +9,7 @@ let app = Murmur.prepare({
         position: 'fe',
         location: "suzhou",
         author:"somebody",
+        date:'today',
         click: function (murmur, e) {
             murmur.update({
                 src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -53,7 +54,7 @@ let app = Murmur.prepare({
 let footer = Murmur.prepare({
     templateUrl: 'footer.html',
     model: {
-        // author: 'luwenxu'
+        author: 'luwenxu'
     }
 })
 
