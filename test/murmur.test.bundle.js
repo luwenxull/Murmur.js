@@ -54,6 +54,7 @@
 	        cn2: 'test',
 	        position: 'fe',
 	        location: "suzhou",
+	        author: "somebody",
 	        click: function (murmur, e) {
 	            murmur.update({
 	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -67,20 +68,20 @@
 	            });
 	        },
 	        update(murmur, e) {
-	            // e.stopPropogation();
-	            // app.update({
-	            //     cn1: 'blue',
-	            //     people: [{
-	            //         age: 30,
-	            //         show: true
-	            //     }, {
-	            //         age: 26,
-	            //         show: false
-	            //     }, {
-	            //         age: 27,
-	            //         show: false
-	            //     }]
-	            // });
+	            e.stopPropagation();
+	            murmur.update({
+	                cn1: 'blue',
+	                people: [{
+	                    age: 30,
+	                    show: true
+	                }, {
+	                    age: 26,
+	                    show: false
+	                }, {
+	                    age: 27,
+	                    show: false
+	                }]
+	            });
 	        },
 	        mount: function (murmur) {
 	            // console.log(dom, murmur)
@@ -97,7 +98,7 @@
 	let footer = Murmur.prepare({
 	    templateUrl: 'footer.html',
 	    model: {
-	        author: 'luwenxu'
+	        // author: 'luwenxu'
 	    }
 	});
 
@@ -336,7 +337,7 @@
 	            this.children = murmur.children;
 	            this.attr = murmur.attr;
 	            this.nodeName = murmur.nodeName;
-	            this.model.state = murmur.model.state;
+	            this.model.state = Object.assign(this.model.state || {}, murmur.model.state || {});
 	        }
 	    };
 	    Murmur.convert = function (obj) {

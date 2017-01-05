@@ -208,7 +208,7 @@ export default class Murmur implements MurmurItf {
             this.children = murmur.children;
             this.attr = murmur.attr;
             this.nodeName = murmur.nodeName;
-            this.model.state=murmur.model.state;
+            this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
         }
     }
     static convert(obj): Murmur {
