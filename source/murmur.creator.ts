@@ -1,4 +1,4 @@
-import Murmur from "./murmur.core"
+import Murmur,{isMurmur} from "./murmur.core"
 import MurmurField from "./murmur.field"
 import * as tools from "./murmur.tool"
 import { MurmurFieldType, MurmurNodeType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./murmur.type"
@@ -11,12 +11,12 @@ class MurmurCreator {
         let connect;
         if (murmur.nodeName === MurmurNodeType.TEXTNODE) {
             connect = new Connect(this.createTextNode(murmur), MurmurConnectTypes[0])
-        } else if (murmur.nodeName===MurmurNodeType.COMMENTNODE) {
+        } else if (murmur.nodeName === MurmurNodeType.COMMENTNODE) {
             connect = new Connect(this.createComment(murmur), MurmurConnectTypes[0])
         } else {
             let dom: Node | HTMLElement = document.createElement(murmur.nodeName);
-            if(murmur.nodeName==='ROOT'){
-                dom=document.createDocumentFragment();
+            if (murmur.nodeName === 'ROOT') {
+                dom = document.createDocumentFragment();
             }
             let compiledDom = this.checkMMDirective(murmur, dom);
             if (compiledDom) {
@@ -76,6 +76,11 @@ class MurmurCreator {
             let childDOM = child.getNode();
             tools.appendChild(childDOM, parent);
         }
+        if (murmur.$mountDirective) {
+            for (let callback of murmur.$mountDirective.callbacks) {
+                callback.call(null, murmur)
+            }
+        }
     }
     createTextNode(murmur: Murmur) {
         let onlyChild = murmur.children[0];
@@ -94,8 +99,17 @@ class MurmurCreator {
             return textNode
         }
     }
-    createComment(murmur):Comment{
-        return document.createComment('test')
+    createComment(murmur:Murmur): Comment {
+        let str='';
+        for(let child of murmur.children){
+            if(isMurmur(child)){
+                child.create(murmur.combineModel())
+                str+=(<HTMLElement>child.getNode()).outerHTML
+            }else{
+                str+=child
+            }
+        }
+        return document.createComment(str)
     }
 }
 

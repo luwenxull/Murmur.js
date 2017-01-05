@@ -130,11 +130,11 @@ export class RefDirective extends MurmurDirective implements MurmurDirectiveItf 
 }
 
 export class MountDirective extends MurmurDirective implements MurmurDirectiveItf {
+    public callbacks=[];
     compile(murmur: Murmur, domGenerated: HTMLElement): Node {
         let mountCallback = murmur.extract(this.directiveExpression);
-        setTimeout(() => {
-            mountCallback && mountCallback(murmur, domGenerated);
-        })
+        this.callbacks.push(mountCallback);
+        murmur.$mountDirective=this;
         return domGenerated
     }
     update() { }

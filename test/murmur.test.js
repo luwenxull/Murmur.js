@@ -10,6 +10,7 @@ let app = Murmur.prepare({
         location: "suzhou",
         author:"somebody",
         date:'today',
+        comment:"test for comment",
         click: function (murmur, e) {
             murmur.update({
                 src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -39,7 +40,7 @@ let app = Murmur.prepare({
             });
         },
         mount: function (murmur) {
-            // console.log(dom, murmur)
+            // console.log(murmur);
         },
         people: [{
             age: 24,
