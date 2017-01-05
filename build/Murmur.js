@@ -68,15 +68,16 @@
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
 	}
+	exports.isMurmur = isMurmur;
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
 	        this.model = { exotic: null, state: null };
+	        this.$directives = [];
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
 	        this.refPromise = null;
-	        this.$directives = [];
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -320,6 +321,7 @@
 
 	"use strict";
 
+	var murmur_core_1 = __webpack_require__(1);
 	var tools = __webpack_require__(3);
 	var murmur_type_1 = __webpack_require__(5);
 	var MurmurDirectives = __webpack_require__(6);
@@ -407,6 +409,12 @@
 	            var childDOM = child.getNode();
 	            tools.appendChild(childDOM, parent);
 	        }
+	        if (murmur.$mountDirective) {
+	            for (var _b = 0, _c = murmur.$mountDirective.callbacks; _b < _c.length; _b++) {
+	                var callback = _c[_b];
+	                callback.call(null, murmur);
+	            }
+	        }
 	    };
 	    MurmurCreator.prototype.createTextNode = function (murmur) {
 	        var onlyChild = murmur.children[0];
@@ -426,7 +434,17 @@
 	        }
 	    };
 	    MurmurCreator.prototype.createComment = function (murmur) {
-	        return document.createComment('test');
+	        var str = '';
+	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
+	            var child = _a[_i];
+	            if (murmur_core_1.isMurmur(child)) {
+	                child.create(murmur.combineModel());
+	                str += child.getNode().outerHTML;
+	            } else {
+	                str += child;
+	            }
+	        }
+	        return document.createComment(str);
 	    };
 	    return MurmurCreator;
 	}();
@@ -835,13 +853,14 @@
 	var MountDirective = function (_super) {
 	    __extends(MountDirective, _super);
 	    function MountDirective() {
-	        return _super.apply(this, arguments) || this;
+	        var _this = _super.apply(this, arguments) || this;
+	        _this.callbacks = [];
+	        return _this;
 	    }
 	    MountDirective.prototype.compile = function (murmur, domGenerated) {
 	        var mountCallback = murmur.extract(this.directiveExpression);
-	        setTimeout(function () {
-	            mountCallback && mountCallback(murmur, domGenerated);
-	        });
+	        this.callbacks.push(mountCallback);
+	        murmur.$mountDirective = this;
 	        return domGenerated;
 	    };
 	    MountDirective.prototype.update = function () {};
