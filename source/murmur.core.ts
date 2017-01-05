@@ -49,7 +49,13 @@ export default class Murmur implements MurmurItf {
     }
     create(exotic = null): Connect {
         this.model.exotic = exotic;
-        return this._connected = MurmurCreatorFactory().create(this);
+        this._connected = MurmurCreatorFactory().create(this);
+        if (this.$mountDirective) {
+            for (let callback of this.$mountDirective.callbacks) {
+                callback.call(null, this)
+            }
+        }
+        return this._connected
     }
     render(loc: string, success?: (murmur: Murmur) => void) {
         let notResolvedPromise = this.getAllNotResolved();

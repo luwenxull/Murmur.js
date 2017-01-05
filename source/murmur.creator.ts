@@ -76,11 +76,6 @@ class MurmurCreator {
             let childDOM = child.getNode();
             tools.appendChild(childDOM, parent);
         }
-        if (murmur.$mountDirective) {
-            for (let callback of murmur.$mountDirective.callbacks) {
-                callback.call(null, murmur)
-            }
-        }
     }
     createTextNode(murmur: Murmur) {
         let onlyChild = murmur.children[0];

@@ -162,7 +162,14 @@
 	            exotic = null;
 	        }
 	        this.model.exotic = exotic;
-	        return this._connected = murmur_creator_1.default().create(this);
+	        this._connected = murmur_creator_1.default().create(this);
+	        if (this.$mountDirective) {
+	            for (var _i = 0, _a = this.$mountDirective.callbacks; _i < _a.length; _i++) {
+	                var callback = _a[_i];
+	                callback.call(null, this);
+	            }
+	        }
+	        return this._connected;
 	    };
 	    Murmur.prototype.render = function (loc, success) {
 	        var _this = this;
@@ -482,12 +489,6 @@
 	            child.create(murmur.combineModel());
 	            var childDOM = child.getNode();
 	            tools.appendChild(childDOM, parent);
-	        }
-	        if (murmur.$mountDirective) {
-	            for (var _b = 0, _c = murmur.$mountDirective.callbacks; _b < _c.length; _b++) {
-	                var callback = _c[_b];
-	                callback.call(null, murmur);
-	            }
 	        }
 	    };
 	    MurmurCreator.prototype.createTextNode = function (murmur) {
