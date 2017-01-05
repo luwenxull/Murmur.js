@@ -47,32 +47,13 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	let app = Murmur.prepare({
 	    templateUrl: 'template.html',
-	    // template: '<div>{age}</div><img mm-ref="footer"/>',
-	    loc: 'app'
-	});
-
-	let footer = Murmur.prepare({
-	    templateUrl: 'footer.html'
-	});
-	let author = Murmur.prepare({
-	    template: '{author}'
-	});
-	app.then(function (app) {
-	    app.holder('footer').replace(footer);
-	});
-	footer.then(function (f) {
-	    f.holder('author').replace(author);
-	});
-	app.then(function (app) {
-	    app.render({
+	    model: {
 	        src: 'http://ggoer.com/favicon.ico',
 	        name: 'luwenxu',
 	        cn1: 'red',
 	        cn2: 'test',
-	        author: "big lu",
 	        position: 'fe',
 	        location: "suzhou",
-	        ref: "test",
 	        click: function (murmur, e) {
 	            murmur.update({
 	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -87,19 +68,19 @@
 	        },
 	        update(murmur, e) {
 	            // e.stopPropogation();
-	            app.update({
-	                cn1: 'blue',
-	                people: [{
-	                    age: 30,
-	                    show: true
-	                }, {
-	                    age: 26,
-	                    show: false
-	                }, {
-	                    age: 27,
-	                    show: false
-	                }]
-	            });
+	            // app.update({
+	            //     cn1: 'blue',
+	            //     people: [{
+	            //         age: 30,
+	            //         show: true
+	            //     }, {
+	            //         age: 26,
+	            //         show: false
+	            //     }, {
+	            //         age: 27,
+	            //         show: false
+	            //     }]
+	            // });
 	        },
 	        mount: function (murmur) {
 	            // console.log(dom, murmur)
@@ -110,7 +91,22 @@
 	        }, {
 	            age: 25
 	        }]
-	    }, function (app) {
+	    }
+	});
+
+	let footer = Murmur.prepare({
+	    templateUrl: 'footer.html',
+	    model: {
+	        author: 'luwenxu'
+	    }
+	});
+
+	app.then(function (app) {
+	    app.holder('footer').replace(footer);
+	});
+
+	app.then(function (app) {
+	    app.render('app', function (app) {
 	        console.log(app);
 	    });
 	});
@@ -146,8 +142,7 @@
 	var extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 	var Murmur = function () {
 	    function Murmur(tagName, attr, children) {
-	        this.primaryModel = null;
-	        this.stateModel = null;
+	        this.model = { exotic: null, state: null };
 	        this.$repeatDirective = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
@@ -158,18 +153,21 @@
 	        this.children = children;
 	        this.murmurID = murmurID++;
 	    }
-	    Murmur.prototype.create = function (primaryModel) {
-	        this.primaryModel = primaryModel;
+	    Murmur.prototype.create = function (exotic) {
+	        if (exotic === void 0) {
+	            exotic = null;
+	        }
+	        this.model.exotic = exotic;
 	        return this._connected = murmur_creator_1.default().create(this);
 	    };
-	    Murmur.prototype.render = function (model, success) {
+	    Murmur.prototype.render = function (loc, success) {
 	        var _this = this;
 	        var notResolvedPromise = this.getAllNotResolved();
 	        this.handleNotResolved(notResolvedPromise, function () {
-	            _this.create(model);
+	            _this.create();
 	            var childNodes = _this.getNode().childNodes;
-	            var loc = document.getElementById(_this._loc);
-	            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), loc);
+	            var root = document.getElementById(loc);
+	            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), root);
 	            if (success) {
 	                success.call(null, _this);
 	            }
@@ -215,7 +213,8 @@
 	        }
 	    };
 	    Murmur.prototype.update = function (updateObj) {
-	        this.stateModel = Object.assign({}, this.stateModel || {}, updateObj);
+	        this.model.state = this.model.state || {};
+	        Object.assign(this.model.state, updateObj);
 	        this.dispatchUpdate(updateObj, Object.keys(updateObj));
 	    };
 	    Murmur.prototype.dispatchUpdate = function (updateObj, keysNeedToBeUpdate) {
@@ -228,7 +227,7 @@
 	            for (var _b = 0, _c = this.children; _b < _c.length; _b++) {
 	                var child = _c[_b];
 	                if (isMurmur(child)) {
-	                    child.primaryModel = this.combineModelToChild();
+	                    child.model.exotic = this.combineModel();
 	                    child.dispatchUpdate(updateObj, keysNeedToBeUpdate);
 	                }
 	            }
@@ -262,21 +261,16 @@
 	        return copyVal;
 	    };
 	    Murmur.prototype.extract = function (field) {
+	        var model = this.combineModel(),
+	            exotic = this.model.exotic;
 	        if (murmur_tool_1.removeAllSpace(field).indexOf(':') === 0) {
-	            return this.primaryModel[field.slice(1)];
+	            return exotic[field.slice(1)];
 	        } else {
-	            if (this.stateModel && field in this.stateModel) {
-	                return (this.stateModel || this.primaryModel)[field];
-	            } else {
-	                return this.primaryModel[field];
-	            }
+	            return model[field];
 	        }
 	    };
-	    Murmur.prototype.combineModelToChild = function () {
-	        if (this.stateModel) {
-	            return Object.assign({}, this.primaryModel, this.stateModel);
-	        }
-	        return this.primaryModel;
+	    Murmur.prototype.combineModel = function () {
+	        return Object.assign({}, this.model.exotic || {}, this.model.state || {});
 	    };
 	    Murmur.prototype.iterateChildren = function (ifBreak) {
 	        if (ifBreak(this)) {
@@ -375,19 +369,19 @@
 	        }
 	        return murmur;
 	    };
-	    Murmur.prepare = function (renderObj, ready) {
+	    Murmur.prepare = function (prepareObj) {
 	        var murmurTree;
-	        var murmurPromise = new murmur_promise_1.MurmurPromise(renderObj.template || renderObj.templateUrl);
-	        if (renderObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(renderObj.template));
-	            murmurTree._loc = renderObj.loc;
+	        var murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
+	        if (prepareObj.template) {
+	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
+	            prepareObj.model && (murmurTree.model.state = prepareObj.model);
 	            murmurPromise.resolve(murmurTree);
-	        } else if (renderObj.templateUrl) {
+	        } else if (prepareObj.templateUrl) {
 	            murmur_tool_1.ajax({
-	                url: renderObj.templateUrl,
+	                url: prepareObj.templateUrl,
 	                success: function (responseText) {
 	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText));
-	                    murmurTree._loc = renderObj.loc;
+	                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
 	                    murmurPromise.resolve(murmurTree);
 	                }
 	            });
@@ -485,7 +479,7 @@
 	        for (var _i = 0, _a = murmur.children; _i < _a.length; _i++) {
 	            var child = _a[_i];
 	            child = child;
-	            child.create(murmur.combineModelToChild());
+	            child.create(murmur.combineModel());
 	            var childDOM = child.getNode();
 	            tools.appendChild(childDOM, parent);
 	        }
@@ -592,17 +586,6 @@
 	    return val === null || val === undefined;
 	}
 	exports.isNothing = isNothing;
-	/**
-	 * 设置默认值并返回
-	 *
-	 * @param {any} val
-	 * @param {any} expected
-	 * @returns
-	 */
-	function setDefault(val, expected) {
-	    return isNothing(val) ? val = expected : val;
-	}
-	exports.setDefault = setDefault;
 	/**
 	 * 去除等号两侧的空格
 	 *
@@ -790,8 +773,7 @@
 	        return _this;
 	    }
 	    RepeatDirective.prototype.compile = function (murmur, domGenerated) {
-	        var dExp = this.directiveExpression,
-	            model = murmur.primaryModel;
+	        var dExp = this.directiveExpression;
 	        var repeatSource;
 	        if (repeatSource = murmur.extract(dExp)) {
 	            for (var _i = 0, repeatSource_1 = repeatSource; _i < repeatSource_1.length; _i++) {
@@ -799,9 +781,9 @@
 	                var clone = murmur_core_1.default.clone(murmur);
 	                clone.$repeatDirective.$repeatEntrance = false;
 	                clone.$repeatDirective.$repeatEntity = true;
-	                clone.stateModel = stateModel;
+	                clone.model.state = stateModel;
 	                this.murmurList.push(clone);
-	                clone.create(model);
+	                clone.create(murmur.model.exotic);
 	            }
 	        }
 	        return domGenerated;
@@ -811,18 +793,18 @@
 	        var keysNeedToBeUpdate = Object.keys(updateData);
 	        for (var _i = 0, _a = this.murmurList; _i < _a.length; _i++) {
 	            var currentMurmur = _a[_i];
-	            currentMurmur.primaryModel = murmur.primaryModel;
+	            currentMurmur.model.exotic = murmur.model.exotic;
 	        }
 	        if (repeatSource) {
 	            var repeatSourceLength = repeatSource.length,
 	                mmListLength = this.murmurList.length;
 	            this.lengthCheck(repeatSource, murmur, updateData);
 	            for (var i = 0; i < repeatSourceLength; i++) {
-	                var currentModel = repeatSource[i];
+	                var newState = repeatSource[i];
 	                var m = this.murmurList[i];
 	                if (m) {
-	                    m.stateModel = currentModel;
-	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)));
+	                    m.model.state = newState;
+	                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(newState)));
 	                }
 	            }
 	        }
@@ -850,8 +832,8 @@
 	                lastDom = void 0;
 	            clone.$repeatDirective.$repeatEntrance = false;
 	            clone.$repeatDirective.$repeatEntity = true;
-	            clone.stateModel = repeatSource[mmListLength++];
-	            clone.create(murmur.primaryModel);
+	            clone.model.state = repeatSource[mmListLength++];
+	            clone.create(murmur.model.exotic);
 	            lastDom = this.murmurList[mmListLength - 2].getNode();
 	            murmur_tool_1.addSibling(lastDom, clone.getNode());
 	            this.murmurList.push(clone);

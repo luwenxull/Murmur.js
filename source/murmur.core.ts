@@ -12,12 +12,10 @@ export interface MurmurItf {
     children: Array<Murmur | string>
 }
 
-interface renderItf {
+interface prepareItf {
     model
     template: string
     templateUrl?: string
-    loc: string
-    ok?: (tree: Murmur) => void
 }
 
 let murmurID = 1;
@@ -31,8 +29,7 @@ export default class Murmur implements MurmurItf {
     public nodeName: string
     public attr: { name: string, value: string }[]
     public children: Array<Murmur | string>
-    public primaryModel = null
-    public stateModel = null
+    public model: { exotic, state } = { exotic: null, state: null }
     public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
     public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = { shouldReturn: true, spaceHolder: null }
     public _connected: Connect
@@ -49,17 +46,17 @@ export default class Murmur implements MurmurItf {
         this.children = children;
         this.murmurID = murmurID++;
     }
-    create(primaryModel): Connect {
-        this.primaryModel = primaryModel;
+    create(exotic = null): Connect {
+        this.model.exotic = exotic;
         return this._connected = MurmurCreatorFactory().create(this);
     }
-    render(model, success?: (murmur: Murmur) => void) {
+    render(loc: string, success?: (murmur: Murmur) => void) {
         let notResolvedPromise = this.getAllNotResolved();
         this.handleNotResolved(notResolvedPromise, () => {
-            this.create(model);
+            this.create();
             let childNodes = (<Node>this.getNode()).childNodes;
-            let loc = document.getElementById(this._loc);
-            appendChild(Array.prototype.slice.call(childNodes, 0), loc);
+            let root = document.getElementById(loc);
+            appendChild(Array.prototype.slice.call(childNodes, 0), root);
             if (success) {
                 success.call(null, this)
             }
@@ -99,7 +96,8 @@ export default class Murmur implements MurmurItf {
         }
     }
     update(updateObj) {
-        this.stateModel = Object.assign({}, this.stateModel || {}, updateObj);
+        this.model.state = this.model.state || {};
+        Object.assign(this.model.state, updateObj);
         this.dispatchUpdate(updateObj, Object.keys(updateObj));
     }
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
@@ -110,7 +108,7 @@ export default class Murmur implements MurmurItf {
             this.doUpdate(updateObj, keysNeedToBeUpdate);
             for (let child of this.children) {
                 if (isMurmur(child)) {
-                    child.primaryModel = this.combineModelToChild()
+                    child.model.exotic = this.combineModel()
                     child.dispatchUpdate(updateObj, keysNeedToBeUpdate)
                 }
             }
@@ -142,21 +140,16 @@ export default class Murmur implements MurmurItf {
         return copyVal
     }
     extract(field) {
+        let model = this.combineModel(),
+            exotic = this.model.exotic;
         if (removeAllSpace(field).indexOf(':') === 0) {
-            return this.primaryModel[field.slice(1)]
+            return exotic[field.slice(1)]
         } else {
-            if (this.stateModel && field in this.stateModel) {
-                return (this.stateModel || this.primaryModel)[field]
-            } else {
-                return this.primaryModel[field]
-            }
+            return model[field]
         }
     }
-    combineModelToChild() {
-        if (this.stateModel) {
-            return Object.assign({}, this.primaryModel, this.stateModel)
-        }
-        return this.primaryModel
+    combineModel() {
+        return Object.assign({}, this.model.exotic || {}, this.model.state || {})
     }
     iterateChildren(ifBreak): Murmur {
         if (ifBreak(this)) {
@@ -241,19 +234,19 @@ export default class Murmur implements MurmurItf {
         }
         return murmur
     }
-    static prepare(renderObj: renderItf, ready?) {
+    static prepare(prepareObj: prepareItf) {
         let murmurTree: Murmur;
-        let murmurPromise = new MurmurPromise(renderObj.template || renderObj.templateUrl);
-        if (renderObj.template) {
-            murmurTree = Murmur.convert(wxParser.parseStart(renderObj.template));
-            murmurTree._loc = renderObj.loc;
+        let murmurPromise = new MurmurPromise(prepareObj.template || prepareObj.templateUrl);
+        if (prepareObj.template) {
+            murmurTree = Murmur.convert(wxParser.parseStart(prepareObj.template));
+            prepareObj.model && (murmurTree.model.state = prepareObj.model);
             murmurPromise.resolve(murmurTree);
-        } else if (renderObj.templateUrl) {
+        } else if (prepareObj.templateUrl) {
             ajax({
-                url: renderObj.templateUrl,
+                url: prepareObj.templateUrl,
                 success: function (responseText) {
                     murmurTree = Murmur.convert(wxParser.parseStart(responseText));
-                    murmurTree._loc = renderObj.loc;
+                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
                     murmurPromise.resolve(murmurTree);
                 }
             })

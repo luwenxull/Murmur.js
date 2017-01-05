@@ -58,17 +58,6 @@ export function isNothing(val) {
 }
 
 /**
- * 设置默认值并返回
- * 
- * @param {any} val
- * @param {any} expected
- * @returns
- */
-export function setDefault(val, expected) {
-    return isNothing(val) ? (val = expected) : val
-}
-
-/**
  * 去除等号两侧的空格
  * 
  * @param {string} str

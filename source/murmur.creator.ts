@@ -69,7 +69,7 @@ class MurmurCreator {
     appendChildren(parent: HTMLElement, murmur: Murmur): void {
         for (let child of murmur.children) {
             child = <Murmur>child;
-            child.create(murmur.combineModelToChild())
+            child.create(murmur.combineModel())
             let childDOM = child.getNode();
             tools.appendChild(childDOM, parent);
         }

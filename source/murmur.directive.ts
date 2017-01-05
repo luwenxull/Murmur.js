@@ -15,17 +15,16 @@ export class MurmurDirective {
 export class RepeatDirective extends MurmurDirective implements MurmurDirectiveItf {
     public murmurList: Murmur[] = [];
     compile(murmur: Murmur, domGenerated: Node): Node {
-        let dExp = this.directiveExpression, model = murmur.primaryModel;
+        let dExp = this.directiveExpression;
         let repeatSource;
         if (repeatSource = murmur.extract(dExp)) {
             for (let stateModel of repeatSource) {
                 let clone = Murmur.clone(murmur);
                 clone.$repeatDirective.$repeatEntrance = false;
                 clone.$repeatDirective.$repeatEntity = true;
-                clone.stateModel = stateModel
+                clone.model.state = stateModel;
                 this.murmurList.push(clone);
-                clone.create(model);
-                // appendChild(clone.getNode(),fragment)
+                clone.create(murmur.model.exotic);
             }
         }
         return domGenerated
@@ -34,17 +33,17 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
         let repeatSource = murmur.extract(this.directiveExpression);
         let keysNeedToBeUpdate = Object.keys(updateData);
         for (let currentMurmur of this.murmurList) {
-            currentMurmur.primaryModel = murmur.primaryModel
+            currentMurmur.model.exotic = murmur.model.exotic
         }
         if (repeatSource) {
             let repeatSourceLength = repeatSource.length, mmListLength = this.murmurList.length;
             this.lengthCheck(repeatSource, murmur, updateData)
             for (let i = 0; i < repeatSourceLength; i++) {
-                let currentModel = repeatSource[i];
+                let newState = repeatSource[i];
                 let m = this.murmurList[i];
                 if (m) {
-                    m.stateModel = currentModel;
-                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(currentModel)))
+                    m.model.state = newState;
+                    m.dispatchUpdate(updateData, keysNeedToBeUpdate.concat(Object.keys(newState)))
                 }
             }
         }
@@ -69,8 +68,8 @@ export class RepeatDirective extends MurmurDirective implements MurmurDirectiveI
             let clone = Murmur.clone(murmur), newDom, lastDom
             clone.$repeatDirective.$repeatEntrance = false;
             clone.$repeatDirective.$repeatEntity = true;
-            clone.stateModel = repeatSource[mmListLength++];
-            clone.create(murmur.primaryModel);
+            clone.model.state = repeatSource[mmListLength++];
+            clone.create(murmur.model.exotic);
             lastDom = this.murmurList[mmListLength - 2].getNode();
             addSibling(lastDom, <Node>clone.getNode());
             this.murmurList.push(clone);

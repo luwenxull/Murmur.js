@@ -1,32 +1,13 @@
 let Murmur = require('../Murmur').Murmur
 let app = Murmur.prepare({
-        templateUrl: 'template.html',
-        // template: '<div>{age}</div><img mm-ref="footer"/>',
-        loc: 'app',
-    })
-
-let footer = Murmur.prepare({
-    templateUrl: 'footer.html'
-})
-let author = Murmur.prepare({
-    template: '{author}'
-})
-app.then(function (app) {
-    app.holder('footer').replace(footer);
-})
-footer.then(function (f) {
-    f.holder('author').replace(author)
-})
-app.then(function (app) {
-    app.render({
+    templateUrl: 'template.html',
+    model: {
         src: 'http://ggoer.com/favicon.ico',
         name: 'luwenxu',
         cn1: 'red',
         cn2: 'test',
-        author: "big lu",
         position: 'fe',
         location: "suzhou",
-        ref:"test",
         click: function (murmur, e) {
             murmur.update({
                 src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
@@ -41,19 +22,19 @@ app.then(function (app) {
         },
         update(murmur, e) {
             // e.stopPropogation();
-            app.update({
-                cn1: 'blue',
-                people: [{
-                    age: 30,
-                    show: true
-                }, {
-                    age: 26,
-                    show: false
-                }, {
-                    age: 27,
-                    show: false
-                }]
-            });
+            // app.update({
+            //     cn1: 'blue',
+            //     people: [{
+            //         age: 30,
+            //         show: true
+            //     }, {
+            //         age: 26,
+            //         show: false
+            //     }, {
+            //         age: 27,
+            //         show: false
+            //     }]
+            // });
         },
         mount: function (murmur) {
             // console.log(dom, murmur)
@@ -65,7 +46,22 @@ app.then(function (app) {
             age: 25,
             // show: true
         }]
-    },function(app){
+    }
+})
+
+let footer = Murmur.prepare({
+    templateUrl: 'footer.html',
+    model: {
+        author: 'luwenxu'
+    }
+})
+
+app.then(function (app) {
+    app.holder('footer').replace(footer);
+})
+
+app.then(function (app) {
+    app.render('app', function (app) {
         console.log(app);
     });
 })
