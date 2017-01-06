@@ -9,24 +9,42 @@ var App = (function () {
         this.appManager = appManager;
     }
     App.prototype.prepare = function (prepareObj) {
-        var murmurTree, murmurPromise;
+        var _this = this;
+        var murmurPromise;
         this.appManager[prepareObj.name] = murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
         if (prepareObj.template) {
-            murmurTree = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
-            prepareObj.model && (murmurTree.model.state = prepareObj.model);
-            murmurPromise.resolve(murmurTree);
+            this.doConvert(prepareObj.template, prepareObj, murmurPromise);
         }
         else if (prepareObj.templateUrl) {
             murmur_tool_1.ajax({
                 url: prepareObj.templateUrl,
                 success: function (responseText) {
-                    murmurTree = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(responseText));
-                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
-                    murmurPromise.resolve(murmurTree);
+                    _this.doConvert(responseText, prepareObj, murmurPromise);
                 }
             });
         }
         return murmurPromise;
+    };
+    App.prototype.doConvert = function (template, prepareObj, murmurPromise) {
+        var needReplace = [];
+        var murmurTree = murmurPromise.murmur = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(template), needReplace);
+        prepareObj.model && (murmurTree.model.state = prepareObj.model);
+        if (needReplace.length) {
+            for (var _i = 0, needReplace_1 = needReplace; _i < needReplace_1.length; _i++) {
+                var holderMurmur = needReplace_1[_i];
+                var substitution = this.getPromise(holderMurmur.placeholder);
+                murmurPromise.depends(substitution);
+                holderMurmur.replace(substitution);
+                murmurPromise.checkDependencies();
+            }
+        }
+        else {
+            murmurPromise.resolve();
+        }
+        // murmurPromise.resolve(murmurTree);
+    };
+    App.prototype.getPromise = function (name) {
+        return this.appManager[name];
     };
     return App;
 }());

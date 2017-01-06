@@ -47,7 +47,15 @@
 	let Murmur = __webpack_require__(1).Murmur;
 	let app = new Murmur();
 
-	window.root = app.prepare({
+	let footer = app.prepare({
+	    name: 'footer',
+	    templateUrl: 'footer.html',
+	    model: {
+	        author: 'luwenxu'
+	    }
+	});
+
+	let root = app.prepare({
 	    name: 'root',
 	    templateUrl: 'template.html',
 	    model: {
@@ -99,6 +107,13 @@
 	        }]
 	    }
 	});
+
+	root.then(function () {
+	    console.log(root);
+	});
+
+	// root.render('app',function(){})
+	// console.log(root);
 	console.log(app);
 
 	// let footer = Murmur.prepare({
@@ -137,8 +152,8 @@
 	"use strict";
 
 	var murmur_core_1 = __webpack_require__(3);
-	var murmur_promise_1 = __webpack_require__(15);
-	var wx_parser_1 = __webpack_require__(11);
+	var murmur_promise_1 = __webpack_require__(11);
+	var wx_parser_1 = __webpack_require__(12);
 	var murmur_tool_1 = __webpack_require__(5);
 	var App = function () {
 	    function App(appManager) {
@@ -148,23 +163,40 @@
 	        this.appManager = appManager;
 	    }
 	    App.prototype.prepare = function (prepareObj) {
-	        var murmurTree, murmurPromise;
+	        var _this = this;
+	        var murmurPromise;
 	        this.appManager[prepareObj.name] = murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
 	        if (prepareObj.template) {
-	            murmurTree = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
-	            prepareObj.model && (murmurTree.model.state = prepareObj.model);
-	            murmurPromise.resolve(murmurTree);
+	            this.doConvert(prepareObj.template, prepareObj, murmurPromise);
 	        } else if (prepareObj.templateUrl) {
 	            murmur_tool_1.ajax({
 	                url: prepareObj.templateUrl,
 	                success: function (responseText) {
-	                    murmurTree = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(responseText));
-	                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
-	                    murmurPromise.resolve(murmurTree);
+	                    _this.doConvert(responseText, prepareObj, murmurPromise);
 	                }
 	            });
 	        }
 	        return murmurPromise;
+	    };
+	    App.prototype.doConvert = function (template, prepareObj, murmurPromise) {
+	        var needReplace = [];
+	        var murmurTree = murmurPromise.murmur = murmur_core_1.default.convert(wx_parser_1.wxParser.parseStart(template), needReplace);
+	        prepareObj.model && (murmurTree.model.state = prepareObj.model);
+	        if (needReplace.length) {
+	            for (var _i = 0, needReplace_1 = needReplace; _i < needReplace_1.length; _i++) {
+	                var holderMurmur = needReplace_1[_i];
+	                var substitution = this.getPromise(holderMurmur.placeholder);
+	                murmurPromise.depends(substitution);
+	                holderMurmur.replace(substitution);
+	                murmurPromise.checkDependencies();
+	            }
+	        } else {
+	            murmurPromise.resolve();
+	        }
+	        // murmurPromise.resolve(murmurTree);
+	    };
+	    App.prototype.getPromise = function (name) {
+	        return this.appManager[name];
 	    };
 	    return App;
 	}();
@@ -180,8 +212,6 @@
 	var murmur_creator_1 = __webpack_require__(4);
 	var murmur_field_1 = __webpack_require__(10);
 	var murmur_tool_1 = __webpack_require__(5);
-	var wx_parser_1 = __webpack_require__(11);
-	var murmur_promise_1 = __webpack_require__(15);
 	var murmur_type_1 = __webpack_require__(7);
 	var murmurID = 1;
 	function isMurmur(obj) {
@@ -366,7 +396,7 @@
 	    };
 	    Murmur.prototype.replace = function (murmurPromise) {
 	        var _this = this;
-	        this.refPromise = murmurPromise;
+	        // this.refPromise = murmurPromise
 	        murmurPromise.then(function (murmur) {
 	            _this.children = [murmur];
 	            // this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
@@ -388,18 +418,21 @@
 	            }
 	        }
 	    };
-	    Murmur.convert = function (obj) {
+	    Murmur.convert = function (obj, needReplace) {
 	        if (obj.nodeName) {
 	            var nodeName = obj.nodeName,
 	                attr = obj.attr,
 	                children = obj.children;
 	            children = children.map(function (child) {
-	                return Murmur.convert(child);
+	                return Murmur.convert(child, needReplace);
 	            });
 	            var m = new Murmur(nodeName, attr, children);
 	            for (var _i = 0, attr_1 = attr; _i < attr_1.length; _i++) {
 	                var a = attr_1[_i];
-	                if (a.name == 'mm-holder') m.placeholder = a.value;
+	                if (a.name == 'mm-holder') {
+	                    m.placeholder = a.value;
+	                    needReplace.push(m);
+	                }
 	            }
 	            return m;
 	        }
@@ -416,25 +449,6 @@
 	            return new Murmur(nodeName, attr, children);
 	        }
 	        return murmur;
-	    };
-	    Murmur.prepare = function (prepareObj) {
-	        var murmurTree;
-	        var murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
-	        if (prepareObj.template) {
-	            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
-	            prepareObj.model && (murmurTree.model.state = prepareObj.model);
-	            murmurPromise.resolve(murmurTree);
-	        } else if (prepareObj.templateUrl) {
-	            murmur_tool_1.ajax({
-	                url: prepareObj.templateUrl,
-	                success: function (responseText) {
-	                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText));
-	                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
-	                    murmurPromise.resolve(murmurTree);
-	                }
-	            });
-	        }
-	        return murmurPromise;
 	    };
 	    return Murmur;
 	}();
@@ -751,7 +765,10 @@
 	        if (xhr.readyState == 4) {
 	            var status = xhr.status;
 	            if (status >= 200 && status < 300) {
-	                options.success && options.success(xhr.responseText, xhr.responseXML);
+	                var random = Math.random() * 5000;
+	                setTimeout(function () {
+	                    options.success && options.success(xhr.responseText, xhr.responseXML);
+	                }, random);
 	            } else {
 	                options.fail && options.fail(status);
 	            }
@@ -1053,15 +1070,84 @@
 /* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports.wxParser=__webpack_require__(12)['default'];
+	"use strict";
+
+	var murmur_type_1 = __webpack_require__(7);
+	var MurmurPromise = function () {
+	    function MurmurPromise(name) {
+	        this.name = name;
+	        this.success = [];
+	        this.one = [];
+	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
+	        this.resolveNotify = false;
+	        this.dependencies = [];
+	        this.dependsBy = [];
+	    }
+	    MurmurPromise.prototype.then = function (fn) {
+	        this.success.push(fn);
+	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	            fn.call(this, this.murmur);
+	        }
+	        ;
+	        return this;
+	    };
+	    MurmurPromise.prototype.resolve = function () {
+	        this.status = murmur_type_1.MurmurPromiseType.RESOLVED;
+	        for (var _i = 0, _a = this.success; _i < _a.length; _i++) {
+	            var success = _a[_i];
+	            success(this.murmur);
+	        }
+	        for (var _b = 0, _c = this.one; _b < _c.length; _b++) {
+	            var o = _c[_b];
+	            o(this.murmur);
+	        }
+	        this.one = []; //注册的回调函数只会执行一次
+	        for (var _d = 0, _e = this.dependsBy; _d < _e.length; _d++) {
+	            var db = _e[_d];
+	            db.checkDependencies();
+	        }
+	    };
+	    MurmurPromise.prototype.depends = function (dep) {
+	        this.dependencies.push(dep);
+	        dep.dependsBy.push(this);
+	    };
+	    MurmurPromise.prototype.checkDependencies = function () {
+	        var dependenciesResolved = true;
+	        for (var _i = 0, _a = this.dependencies; _i < _a.length; _i++) {
+	            var dependency = _a[_i];
+	            if (dependency.status === murmur_type_1.MurmurPromiseType.PENDING) {
+	                dependenciesResolved = false;
+	            }
+	        }
+	        if (dependenciesResolved) {
+	            this.resolve();
+	        }
+	    };
+	    MurmurPromise.prototype.once = function (fn) {
+	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
+	            fn.call(this, this.murmur);
+	        } else {
+	            this.one.push(fn);
+	        }
+	        return this;
+	    };
+	    return MurmurPromise;
+	}();
+	exports.MurmurPromise = MurmurPromise;
 
 /***/ },
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
+	exports.wxParser=__webpack_require__(13)['default'];
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
 	"use strict";
-	var wxParser_tool_1 = __webpack_require__(13);
-	var wxParser_type_1 = __webpack_require__(14);
+	var wxParser_tool_1 = __webpack_require__(14);
+	var wxParser_type_1 = __webpack_require__(15);
 	function isText(obj) {
 	    return obj && obj.type == wxParser_type_1.TEXTNODE;
 	}
@@ -1180,7 +1266,7 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1218,7 +1304,7 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1230,40 +1316,6 @@
 	exports.COMMENTSTART = 'COMMENTSTART';
 	exports.COMMENTEND = 'COMMENTEND';
 
-
-/***/ },
-/* 15 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	var murmur_type_1 = __webpack_require__(7);
-	var MurmurPromise = function () {
-	    function MurmurPromise(name) {
-	        this.name = name;
-	        this.success = [];
-	        this.status = murmur_type_1.MurmurPromiseType.PENDING;
-	        this.resolveNotify = false;
-	    }
-	    MurmurPromise.prototype.then = function (fn) {
-	        this.success.push(fn);
-	        if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
-	            fn.call(this, this.murmur);
-	        }
-	        ;
-	        return this;
-	    };
-	    MurmurPromise.prototype.resolve = function (murmur) {
-	        this.status = murmur_type_1.MurmurPromiseType.RESOLVED;
-	        this.murmur = murmur;
-	        for (var _i = 0, _a = this.success; _i < _a.length; _i++) {
-	            var success = _a[_i];
-	            success(murmur);
-	        }
-	    };
-	    return MurmurPromise;
-	}();
-	exports.MurmurPromise = MurmurPromise;
 
 /***/ }
 /******/ ]);

@@ -13,12 +13,6 @@ export interface MurmurItf {
     children: Array<Murmur | string>
 }
 
-interface prepareItf {
-    model
-    template: string
-    templateUrl?: string
-}
-
 let murmurID = 1;
 
 export function isMurmur(obj: Murmur | string): obj is Murmur {
@@ -191,7 +185,7 @@ export default class Murmur implements MurmurItf {
         return refMurmur
     }
     replace(murmurPromise: MurmurPromise) {
-        this.refPromise = murmurPromise
+        // this.refPromise = murmurPromise
         murmurPromise.then((murmur) => {
             this.children = [murmur];
             // this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
@@ -212,13 +206,16 @@ export default class Murmur implements MurmurItf {
             }
         }
     }
-    static convert(obj): Murmur {
+    static convert(obj, needReplace: Array<Murmur>): Murmur {
         if (obj.nodeName) {
             let {nodeName, attr, children} = obj;
-            children = children.map(child => Murmur.convert(child));
-            let m = new Murmur(nodeName, attr, children);
+            children = children.map(child => Murmur.convert(child, needReplace));
+            let m: Murmur = new Murmur(nodeName, attr, children);
             for (let a of attr) {
-                if (a.name == 'mm-holder') m.placeholder = a.value
+                if (a.name == 'mm-holder') {
+                    m.placeholder = a.value
+                    needReplace.push(m)
+                }
             }
             return m
         }
@@ -231,24 +228,5 @@ export default class Murmur implements MurmurItf {
             return new Murmur(nodeName, attr, children);
         }
         return murmur
-    }
-    static prepare(prepareObj: prepareItf) {
-        let murmurTree: Murmur;
-        let murmurPromise = new MurmurPromise(prepareObj.template || prepareObj.templateUrl);
-        if (prepareObj.template) {
-            murmurTree = Murmur.convert(wxParser.parseStart(prepareObj.template));
-            prepareObj.model && (murmurTree.model.state = prepareObj.model);
-            murmurPromise.resolve(murmurTree);
-        } else if (prepareObj.templateUrl) {
-            ajax({
-                url: prepareObj.templateUrl,
-                success: function (responseText) {
-                    murmurTree = Murmur.convert(wxParser.parseStart(responseText));
-                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
-                    murmurPromise.resolve(murmurTree);
-                }
-            })
-        }
-        return murmurPromise
     }
 }

@@ -2,8 +2,6 @@
 var murmur_creator_1 = require("./murmur.creator");
 var murmur_field_1 = require("./murmur.field");
 var murmur_tool_1 = require("./murmur.tool");
-var wx_parser_1 = require("wx-parser");
-var murmur_promise_1 = require("./murmur.promise");
 var murmur_type_1 = require("./murmur.type");
 var murmurID = 1;
 function isMurmur(obj) {
@@ -181,7 +179,7 @@ var Murmur = (function () {
     };
     Murmur.prototype.replace = function (murmurPromise) {
         var _this = this;
-        this.refPromise = murmurPromise;
+        // this.refPromise = murmurPromise
         murmurPromise.then(function (murmur) {
             _this.children = [murmur];
             // this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
@@ -205,15 +203,17 @@ var Murmur = (function () {
             }
         }
     };
-    Murmur.convert = function (obj) {
+    Murmur.convert = function (obj, needReplace) {
         if (obj.nodeName) {
             var nodeName = obj.nodeName, attr = obj.attr, children = obj.children;
-            children = children.map(function (child) { return Murmur.convert(child); });
+            children = children.map(function (child) { return Murmur.convert(child, needReplace); });
             var m = new Murmur(nodeName, attr, children);
             for (var _i = 0, attr_1 = attr; _i < attr_1.length; _i++) {
                 var a = attr_1[_i];
-                if (a.name == 'mm-holder')
+                if (a.name == 'mm-holder') {
                     m.placeholder = a.value;
+                    needReplace.push(m);
+                }
             }
             return m;
         }
@@ -226,26 +226,6 @@ var Murmur = (function () {
             return new Murmur(nodeName, attr, children);
         }
         return murmur;
-    };
-    Murmur.prepare = function (prepareObj) {
-        var murmurTree;
-        var murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
-        if (prepareObj.template) {
-            murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(prepareObj.template));
-            prepareObj.model && (murmurTree.model.state = prepareObj.model);
-            murmurPromise.resolve(murmurTree);
-        }
-        else if (prepareObj.templateUrl) {
-            murmur_tool_1.ajax({
-                url: prepareObj.templateUrl,
-                success: function (responseText) {
-                    murmurTree = Murmur.convert(wx_parser_1.wxParser.parseStart(responseText));
-                    prepareObj.model && (murmurTree.model.state = prepareObj.model);
-                    murmurPromise.resolve(murmurTree);
-                }
-            });
-        }
-        return murmurPromise;
     };
     return Murmur;
 }());

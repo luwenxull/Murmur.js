@@ -1,7 +1,15 @@
 let Murmur = require('../Murmur').Murmur
 let app=new Murmur();
 
-window.root = app.prepare({
+let footer = app.prepare({
+    name:'footer',
+    templateUrl: 'footer.html',
+    model: {
+        author: 'luwenxu'
+    }
+})
+
+let root = app.prepare({
     name:'root',
     templateUrl: 'template.html',
     model: {
@@ -54,6 +62,13 @@ window.root = app.prepare({
         }]
     }
 })
+
+root.then(function(){
+    console.log(root);
+})
+
+// root.render('app',function(){})
+// console.log(root);
 console.log(app);
 
 
