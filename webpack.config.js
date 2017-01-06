@@ -1,7 +1,7 @@
 module.exports = {
     entry: './Murmur.js',
     output: {
-        filename: './build/Murmur.js'
+        filename: './dist/Murmur.js'
     },
     module: {
         loaders: [{

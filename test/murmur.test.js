@@ -1,5 +1,8 @@
 let Murmur = require('../Murmur').Murmur
-let app = Murmur.prepare({
+let app=new Murmur();
+
+window.root = app.prepare({
+    name:'root',
     templateUrl: 'template.html',
     model: {
         src: 'http://ggoer.com/favicon.ico',
@@ -51,20 +54,23 @@ let app = Murmur.prepare({
         }]
     }
 })
+console.log(app);
 
-let footer = Murmur.prepare({
-    templateUrl: 'footer.html',
-    model: {
-        author: 'luwenxu'
-    }
-})
 
-app.then(function (app) {
-    app.holder('footer').replace(footer);
-})
 
-app.then(function (app) {
-    app.render('app', function (app) {
-        console.log(app);
-    });
-})
+// let footer = Murmur.prepare({
+//     templateUrl: 'footer.html',
+//     model: {
+//         author: 'luwenxu'
+//     }
+// })
+
+// app.then(function (app) {
+//     app.holder('footer').replace(footer);
+// })
+
+// app.then(function (app) {
+//     app.render('app', function (app) {
+//         console.log(app);
+//     });
+// })

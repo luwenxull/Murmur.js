@@ -6,6 +6,7 @@ import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"
 import { MurmurPromise } from "./murmur.promise"
 import { MurmurPromiseType } from "./murmur.type"
+
 export interface MurmurItf {
     nodeName: string,
     attr: { name: string, value: string }[]

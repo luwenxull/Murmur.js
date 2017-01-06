@@ -1,6 +1,6 @@
 "use strict";
 if(window){
-    window.Murmur=require('./lib/murmur.core')['default'];
+    window.Murmur=require('./build/murmur.app')['default'];
 }
 
-exports.Murmur = require('./lib/murmur.core')['default'];
+exports.Murmur = require('./build/murmur.app')['default'];

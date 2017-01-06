@@ -25,9 +25,9 @@
     "wx-parser": "^1.5.0"
   },
   "scripts": {
-    "tsc": "tsc --outDir lib -p source",
-    "test": "tsc --outDir lib -p source && webpack --config webpack.test.config.js",
-    "build": "tsc --outDir lib -p source && webpack --config webpack.config.js"
+    "tsc": "tsc --outDir build -p source",
+    "test": "tsc --outDir build -p source && webpack --config webpack.test.config.js",
+    "build": "tsc --outDir build -p source && webpack --config webpack.config.js"
   },
   "devDependencies": {
     "babel-core": "^6.21.0",
