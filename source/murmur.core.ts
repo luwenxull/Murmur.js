@@ -21,21 +21,22 @@ export function isMurmur(obj: Murmur | string): obj is Murmur {
 
 let extractValueRegexr = /\{\s*:{0,1}\w+\s*\}/g;
 export default class Murmur implements MurmurItf {
-    public nodeName: string
-    public attr: { name: string, value: string }[]
-    public children: Array<Murmur | string>
-    public model: { exotic, state } = { exotic: null, state: null }
-    public $directives: MurmurDirectiveItf[] = []
-    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null }
-    public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = { shouldReturn: true, spaceHolder: null }
-    public $mountDirective: MountDirective
-    public _connected: Connect
-    public _fields: { [p: string]: MurmurField } = {}
-    public _loc: string
-    public refClue: string
-    public placeholder: string
+    public nodeName: string;
+    public attr: { name: string, value: string }[];
+    public children: Array<Murmur | string>;
+    public model: { exotic, state } = { exotic: null, state: null };
+    public $directives: MurmurDirectiveItf[] = [];
+    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
+    public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = { shouldReturn: true, spaceHolder: null };
+    public $mountDirective: MountDirective;
+    public _connected: Connect;
+    public _fields: { [p: string]: MurmurField } = {};
+    public _loc: string;
+    public refClue: string;
+    public placeholder: string;
     public refPromise: MurmurPromise = null;
-    private murmurID: number
+    private murmurID: number;
+    private rendered:boolean=false;
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;
@@ -53,6 +54,7 @@ export default class Murmur implements MurmurItf {
         return this._connected
     }
     render(loc: string, success?: (murmur: Murmur) => void) {
+        this.rendered=true;
         this.create();
         let childNodes = (<Node>this.getNode()).childNodes;
         let root = document.getElementById(loc);

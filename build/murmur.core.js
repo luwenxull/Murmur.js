@@ -16,6 +16,7 @@ var Murmur = (function () {
         this.$ifDirective = { shouldReturn: true, spaceHolder: null };
         this._fields = {};
         this.refPromise = null;
+        this.rendered = false;
         this.nodeName = tagName;
         this.attr = attr;
         this.children = children;
@@ -34,6 +35,7 @@ var Murmur = (function () {
         return this._connected;
     };
     Murmur.prototype.render = function (loc, success) {
+        this.rendered = true;
         this.create();
         var childNodes = this.getNode().childNodes;
         var root = document.getElementById(loc);

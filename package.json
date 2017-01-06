@@ -1,6 +1,6 @@
 {
   "name": "murmur-orz.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "么么！一个mvvm框架",
   "main": "Murmur.js",
   "directories": {

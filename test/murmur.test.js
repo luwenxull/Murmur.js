@@ -1,12 +1,12 @@
-let Murmur = require('../Murmur').Murmur
-let app=new Murmur();
+let Mpp = require('../Murmur').Mpp
+let app=new Mpp();
 
 app.prepare({
     name:'author',
     template:'hello {author}'
 })
 
-app.prepare({
+let footer=app.prepare({
     name:'footer',
     templateUrl: 'footer.html',
     model: {

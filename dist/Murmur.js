@@ -47,10 +47,10 @@
 	"use strict";
 
 	if (window) {
-	    window.Murmur = __webpack_require__(1)['default'];
+	    window.Mpp = __webpack_require__(1)['default'];
 	}
 
-	exports.Murmur = __webpack_require__(1)['default'];
+	exports.Mpp = __webpack_require__(1)['default'];
 
 /***/ },
 /* 1 */
@@ -133,6 +133,7 @@
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
 	        this.refPromise = null;
+	        this.rendered = false;
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -153,6 +154,7 @@
 	        return this._connected;
 	    };
 	    Murmur.prototype.render = function (loc, success) {
+	        this.rendered = true;
 	        this.create();
 	        var childNodes = this.getNode().childNodes;
 	        var root = document.getElementById(loc);

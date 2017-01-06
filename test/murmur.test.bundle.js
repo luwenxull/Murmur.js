@@ -44,15 +44,15 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	let Murmur = __webpack_require__(1).Murmur;
-	let app = new Murmur();
+	let Mpp = __webpack_require__(1).Mpp;
+	let app = new Mpp();
 
 	app.prepare({
 	    name: 'author',
 	    template: 'hello {author}'
 	});
 
-	app.prepare({
+	let footer = app.prepare({
 	    name: 'footer',
 	    templateUrl: 'footer.html',
 	    model: {
@@ -147,10 +147,10 @@
 	"use strict";
 
 	if (window) {
-	    window.Murmur = __webpack_require__(2)['default'];
+	    window.Mpp = __webpack_require__(2)['default'];
 	}
 
-	exports.Murmur = __webpack_require__(2)['default'];
+	exports.Mpp = __webpack_require__(2)['default'];
 
 /***/ },
 /* 2 */
@@ -233,6 +233,7 @@
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
 	        this.refPromise = null;
+	        this.rendered = false;
 	        this.nodeName = tagName;
 	        this.attr = attr;
 	        this.children = children;
@@ -253,6 +254,7 @@
 	        return this._connected;
 	    };
 	    Murmur.prototype.render = function (loc, success) {
+	        this.rendered = true;
 	        this.create();
 	        var childNodes = this.getNode().childNodes;
 	        var root = document.getElementById(loc);
