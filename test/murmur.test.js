@@ -1,7 +1,12 @@
 let Murmur = require('../Murmur').Murmur
 let app=new Murmur();
 
-let footer = app.prepare({
+app.prepare({
+    name:'author',
+    template:'hello {author}'
+})
+
+app.prepare({
     name:'footer',
     templateUrl: 'footer.html',
     model: {
@@ -67,7 +72,9 @@ root.then(function(){
     console.log(root);
 })
 
-// root.render('app',function(){})
+root.render('app',function(){
+    console.log('d');
+})
 // console.log(root);
 console.log(app);
 

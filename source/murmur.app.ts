@@ -11,7 +11,6 @@ interface prepareItf {
     templateUrl?: string,
 }
 
-
 export default class App {
     constructor(public appManager: {} = {}) { }
     prepare(prepareObj: prepareItf) {

@@ -52,4 +52,9 @@ export class MurmurPromise {
         }
         return this
     }
+    render(loc,success){
+        this.once(()=>{
+            this.murmur.render(loc,success)
+        })
+    }
 }

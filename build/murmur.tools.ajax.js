@@ -17,9 +17,7 @@ function ajax(options) {
             var status = xhr.status;
             if (status >= 200 && status < 300) {
                 var random = Math.random() * 5000;
-                setTimeout(function () {
-                    options.success && options.success(xhr.responseText, xhr.responseXML);
-                }, random);
+                options.success && options.success(xhr.responseText, xhr.responseXML);
             }
             else {
                 options.fail && options.fail(status);

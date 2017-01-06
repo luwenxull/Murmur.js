@@ -53,48 +53,12 @@ export default class Murmur implements MurmurItf {
         return this._connected
     }
     render(loc: string, success?: (murmur: Murmur) => void) {
-        let notResolvedPromise = this.getAllNotResolved();
-        this.handleNotResolved(notResolvedPromise, () => {
-            this.create();
-            let childNodes = (<Node>this.getNode()).childNodes;
-            let root = document.getElementById(loc);
-            appendChild(Array.prototype.slice.call(childNodes, 0), root);
-            if (success) {
-                success.call(null, this)
-            }
-        })
-    }
-    getAllNotResolved(notResolvedPromise: MurmurPromise[] = []) {
-        let waitPromise = this.refPromise;
-        if (waitPromise) {
-            if (waitPromise.status === MurmurPromiseType.PENDING) {
-                notResolvedPromise.push(waitPromise)
-            }
-            if (waitPromise.status === MurmurPromiseType.RESOLVED) {
-                waitPromise.murmur.getAllNotResolved(notResolvedPromise)
-            }
-        }
-        for (let child of this.children) {
-            if (isMurmur(child)) {
-                child.getAllNotResolved(notResolvedPromise)
-            }
-        }
-        return notResolvedPromise
-    }
-    handleNotResolved(notResolvedPromise: MurmurPromise[], callback) {
-        let allResolved = true;
-        for (let nrp of notResolvedPromise) {
-            if (nrp.status === MurmurPromiseType.PENDING && !nrp.resolveNotify) {
-                nrp.resolveNotify = true;
-                nrp.then((murmur: Murmur) => {
-                    murmur.getAllNotResolved(notResolvedPromise)
-                    this.handleNotResolved(notResolvedPromise, callback)
-                })
-                allResolved = false;
-            }
-        }
-        if (allResolved) {
-            callback()
+        this.create();
+        let childNodes = (<Node>this.getNode()).childNodes;
+        let root = document.getElementById(loc);
+        appendChild(Array.prototype.slice.call(childNodes, 0), root);
+        if (success) {
+            success.call(null, this)
         }
     }
     update(updateObj) {

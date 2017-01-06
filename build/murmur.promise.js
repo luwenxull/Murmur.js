@@ -59,6 +59,12 @@ var MurmurPromise = (function () {
         }
         return this;
     };
+    MurmurPromise.prototype.render = function (loc, success) {
+        var _this = this;
+        this.once(function () {
+            _this.murmur.render(loc, success);
+        });
+    };
     return MurmurPromise;
 }());
 exports.MurmurPromise = MurmurPromise;

@@ -44,101 +44,13 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	let Murmur = __webpack_require__(1).Murmur;
-	let app = new Murmur();
+	"use strict";
 
-	app.prepare({
-	    name: 'author',
-	    template: 'hello {author}'
-	});
+	if (window) {
+	    window.Murmur = __webpack_require__(1)['default'];
+	}
 
-	app.prepare({
-	    name: 'footer',
-	    templateUrl: 'footer.html',
-	    model: {
-	        author: 'luwenxu'
-	    }
-	});
-
-	let root = app.prepare({
-	    name: 'root',
-	    templateUrl: 'template.html',
-	    model: {
-	        src: 'http://ggoer.com/favicon.ico',
-	        name: 'luwenxu',
-	        cn1: 'red',
-	        cn2: 'test',
-	        position: 'fe',
-	        location: "suzhou",
-	        author: "somebody",
-	        date: 'today',
-	        comment: "test for comment",
-	        click: function (murmur, e) {
-	            murmur.update({
-	                src: 'http://tva1.sinaimg.cn/crop.239.0.607.607.50/006l0mbojw1f7avkfj1oej30nk0xbqc6.jpg'
-	            });
-	        },
-	        click2: function (murmur, e) {
-	            e.stopPropagation();
-	            murmur.update({
-	                location: 'beijing',
-	                cn1: 'green'
-	            });
-	        },
-	        update(murmur, e) {
-	            e.stopPropagation();
-	            murmur.update({
-	                cn1: 'blue',
-	                people: [{
-	                    age: 30,
-	                    show: true
-	                }, {
-	                    age: 26,
-	                    show: false
-	                }, {
-	                    age: 27,
-	                    show: false
-	                }]
-	            });
-	        },
-	        mount: function (murmur) {
-	            // console.log(murmur);
-	        },
-	        people: [{
-	            age: 24,
-	            show: true
-	        }, {
-	            age: 25
-	        }]
-	    }
-	});
-
-	root.then(function () {
-	    console.log(root);
-	});
-
-	root.render('app', function () {
-	    console.log('d');
-	});
-	// console.log(root);
-	console.log(app);
-
-	// let footer = Murmur.prepare({
-	//     templateUrl: 'footer.html',
-	//     model: {
-	//         author: 'luwenxu'
-	//     }
-	// })
-
-	// app.then(function (app) {
-	//     app.holder('footer').replace(footer);
-	// })
-
-	// app.then(function (app) {
-	//     app.render('app', function (app) {
-	//         console.log(app);
-	//     });
-	// })
+	exports.Murmur = __webpack_require__(1)['default'];
 
 /***/ },
 /* 1 */
@@ -146,22 +58,10 @@
 
 	"use strict";
 
-	if (window) {
-	    window.Murmur = __webpack_require__(2)['default'];
-	}
-
-	exports.Murmur = __webpack_require__(2)['default'];
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-
-	var murmur_core_1 = __webpack_require__(3);
-	var murmur_promise_1 = __webpack_require__(11);
-	var wx_parser_1 = __webpack_require__(12);
-	var murmur_tool_1 = __webpack_require__(5);
+	var murmur_core_1 = __webpack_require__(2);
+	var murmur_promise_1 = __webpack_require__(10);
+	var wx_parser_1 = __webpack_require__(11);
+	var murmur_tool_1 = __webpack_require__(4);
 	var App = function () {
 	    function App(appManager) {
 	        if (appManager === void 0) {
@@ -211,14 +111,14 @@
 	exports.default = App;
 
 /***/ },
-/* 3 */
+/* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_creator_1 = __webpack_require__(4);
-	var murmur_field_1 = __webpack_require__(10);
-	var murmur_tool_1 = __webpack_require__(5);
+	var murmur_creator_1 = __webpack_require__(3);
+	var murmur_field_1 = __webpack_require__(9);
+	var murmur_tool_1 = __webpack_require__(4);
 	var murmurID = 1;
 	function isMurmur(obj) {
 	    return obj instanceof Murmur;
@@ -419,16 +319,16 @@
 	exports.default = Murmur;
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_core_1 = __webpack_require__(3);
-	var tools = __webpack_require__(5);
-	var murmur_type_1 = __webpack_require__(7);
-	var MurmurDirectives = __webpack_require__(8);
-	var murmur_connect_1 = __webpack_require__(9);
+	var murmur_core_1 = __webpack_require__(2);
+	var tools = __webpack_require__(4);
+	var murmur_type_1 = __webpack_require__(6);
+	var MurmurDirectives = __webpack_require__(7);
+	var murmur_connect_1 = __webpack_require__(8);
 	var MurmurCreator = function () {
 	    function MurmurCreator() {
 	        this.extractValueRegexr = /\{:{0,1}\w+\}/g;
@@ -555,12 +455,12 @@
 	exports.default = MurmurCreatorFactory;
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_tools_ajax_1 = __webpack_require__(6);
+	var murmur_tools_ajax_1 = __webpack_require__(5);
 	exports.ajax = murmur_tools_ajax_1.ajax;
 	/**
 	 * 判断是否是简单值
@@ -706,7 +606,7 @@
 	exports.appendChild = appendChild;
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -747,7 +647,7 @@
 	exports.ajax = ajax;
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -784,7 +684,7 @@
 	})(MurmurPromiseType = exports.MurmurPromiseType || (exports.MurmurPromiseType = {}));
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -796,8 +696,8 @@
 	    }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var murmur_core_1 = __webpack_require__(3);
-	var murmur_tool_1 = __webpack_require__(5);
+	var murmur_core_1 = __webpack_require__(2);
+	var murmur_tool_1 = __webpack_require__(4);
 	var MurmurDirective = function () {
 	    function MurmurDirective(directiveExpression) {
 	        this.directiveExpression = directiveExpression;
@@ -967,12 +867,12 @@
 	exports.MountDirective = MountDirective;
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(7);
+	var murmur_type_1 = __webpack_require__(6);
 	var Connect = function () {
 	    function Connect(dom, type) {
 	        this.dom = dom;
@@ -990,12 +890,12 @@
 	exports.default = Connect;
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(7);
+	var murmur_type_1 = __webpack_require__(6);
 	var MurmurField = function () {
 	    function MurmurField(value, expression, type, unit) {
 	        this.value = value;
@@ -1028,12 +928,12 @@
 	exports.default = MurmurField;
 
 /***/ },
-/* 11 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
-	var murmur_type_1 = __webpack_require__(7);
+	var murmur_type_1 = __webpack_require__(6);
 	var MurmurPromise = function () {
 	    function MurmurPromise(name) {
 	        this.name = name;
@@ -1103,18 +1003,18 @@
 	exports.MurmurPromise = MurmurPromise;
 
 /***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports.wxParser=__webpack_require__(12)['default'];
+
+/***/ },
 /* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports.wxParser=__webpack_require__(13)['default'];
-
-/***/ },
-/* 13 */
-/***/ function(module, exports, __webpack_require__) {
-
 	"use strict";
-	var wxParser_tool_1 = __webpack_require__(14);
-	var wxParser_type_1 = __webpack_require__(15);
+	var wxParser_tool_1 = __webpack_require__(13);
+	var wxParser_type_1 = __webpack_require__(14);
 	function isText(obj) {
 	    return obj && obj.type == wxParser_type_1.TEXTNODE;
 	}
@@ -1233,7 +1133,7 @@
 
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1271,7 +1171,7 @@
 
 
 /***/ },
-/* 15 */
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";

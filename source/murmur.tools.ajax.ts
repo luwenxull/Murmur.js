@@ -7,15 +7,15 @@ function formatParams(data) {
     return arr.join("&");
 }
 
-interface optionItf{
-    url:string
-    type?:string
+interface optionItf {
+    url: string
+    type?: string
     data?
     dataType?
-    success?:(t,xml)=>void
-    fail?:(statusCode)=>void
+    success?: (t, xml) => void
+    fail?: (statusCode) => void
 }
-export function ajax(options:optionItf) {
+export function ajax(options: optionItf) {
     options.type = (options.type || "GET").toUpperCase();
     options.dataType = options.dataType || "json";
     let params = formatParams(options.data);
@@ -25,10 +25,8 @@ export function ajax(options:optionItf) {
         if (xhr.readyState == 4) {
             var status = xhr.status;
             if (status >= 200 && status < 300) {
-                let random=Math.random()*5000;
-                setTimeout(function(){
-                    options.success && options.success(xhr.responseText, xhr.responseXML);
-                },random)
+                let random = Math.random() * 5000;
+                options.success && options.success(xhr.responseText, xhr.responseXML);
             } else {
                 options.fail && options.fail(status);
             }

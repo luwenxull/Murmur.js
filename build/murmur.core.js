@@ -2,7 +2,6 @@
 var murmur_creator_1 = require("./murmur.creator");
 var murmur_field_1 = require("./murmur.field");
 var murmur_tool_1 = require("./murmur.tool");
-var murmur_type_1 = require("./murmur.type");
 var murmurID = 1;
 function isMurmur(obj) {
     return obj instanceof Murmur;
@@ -35,53 +34,12 @@ var Murmur = (function () {
         return this._connected;
     };
     Murmur.prototype.render = function (loc, success) {
-        var _this = this;
-        var notResolvedPromise = this.getAllNotResolved();
-        this.handleNotResolved(notResolvedPromise, function () {
-            _this.create();
-            var childNodes = _this.getNode().childNodes;
-            var root = document.getElementById(loc);
-            murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), root);
-            if (success) {
-                success.call(null, _this);
-            }
-        });
-    };
-    Murmur.prototype.getAllNotResolved = function (notResolvedPromise) {
-        if (notResolvedPromise === void 0) { notResolvedPromise = []; }
-        var waitPromise = this.refPromise;
-        if (waitPromise) {
-            if (waitPromise.status === murmur_type_1.MurmurPromiseType.PENDING) {
-                notResolvedPromise.push(waitPromise);
-            }
-            if (waitPromise.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
-                waitPromise.murmur.getAllNotResolved(notResolvedPromise);
-            }
-        }
-        for (var _i = 0, _a = this.children; _i < _a.length; _i++) {
-            var child = _a[_i];
-            if (isMurmur(child)) {
-                child.getAllNotResolved(notResolvedPromise);
-            }
-        }
-        return notResolvedPromise;
-    };
-    Murmur.prototype.handleNotResolved = function (notResolvedPromise, callback) {
-        var _this = this;
-        var allResolved = true;
-        for (var _i = 0, notResolvedPromise_1 = notResolvedPromise; _i < notResolvedPromise_1.length; _i++) {
-            var nrp = notResolvedPromise_1[_i];
-            if (nrp.status === murmur_type_1.MurmurPromiseType.PENDING && !nrp.resolveNotify) {
-                nrp.resolveNotify = true;
-                nrp.then(function (murmur) {
-                    murmur.getAllNotResolved(notResolvedPromise);
-                    _this.handleNotResolved(notResolvedPromise, callback);
-                });
-                allResolved = false;
-            }
-        }
-        if (allResolved) {
-            callback();
+        this.create();
+        var childNodes = this.getNode().childNodes;
+        var root = document.getElementById(loc);
+        murmur_tool_1.appendChild(Array.prototype.slice.call(childNodes, 0), root);
+        if (success) {
+            success.call(null, this);
         }
     };
     Murmur.prototype.update = function (updateObj) {
