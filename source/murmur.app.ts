@@ -25,6 +25,8 @@ export default class App {
                     this.doConvert(responseText, prepareObj, murmurPromise)
                 }
             })
+        } else{
+            throw new Error('请传入正确的模板字符串或地址！')
         }
         return murmurPromise
     }
