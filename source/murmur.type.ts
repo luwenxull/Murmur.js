@@ -1,6 +1,6 @@
 export let MurmurNodeType = {
     TEXTNODE: 'TEXTNODE',
-    COMMENTNODE:'COMMENTNODE'
+    COMMENTNODE: 'COMMENTNODE'
 }
 
 export enum MurmurFieldType { ATTR, TEXT }
@@ -9,7 +9,8 @@ export let MurmurDirectiveTypes = {
     "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
     "mm-if": { name: "mm-if", directive: "IfDirective" },
     "mm-ref": { name: 'mm-ref', directive: 'RefDirective' },
-    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' }
+    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' },
+    "mm-show": { name: "mm-show", directive: 'ShowDirective' }
 }
 
 export enum MurmurConnectTypes { "DOM", "DIRECTIVE" }

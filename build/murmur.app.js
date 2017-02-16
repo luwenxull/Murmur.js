@@ -23,6 +23,9 @@ var App = (function () {
                 }
             });
         }
+        else {
+            throw new Error('请传入正确的模板字符串或地址！');
+        }
         return murmurPromise;
     };
     App.prototype.doConvert = function (template, prepareObj, murmurPromise) {

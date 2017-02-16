@@ -12,7 +12,8 @@ exports.MurmurDirectiveTypes = {
     "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
     "mm-if": { name: "mm-if", directive: "IfDirective" },
     "mm-ref": { name: 'mm-ref', directive: 'RefDirective' },
-    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' }
+    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' },
+    "mm-show": { name: "mm-show", directive: 'ShowDirective' }
 };
 var MurmurConnectTypes;
 (function (MurmurConnectTypes) {

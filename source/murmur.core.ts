@@ -35,6 +35,7 @@ export default class Murmur implements MurmurItf {
     public refClue: string;
     public placeholder: string;
     public refPromise: MurmurPromise = null;
+    public logicParents:{}={};
     private murmurID: number;
     private rendered:boolean=false;
     constructor(tagName, attr, children) {
@@ -171,6 +172,12 @@ export default class Murmur implements MurmurItf {
                 return this.$ifDirective.spaceHolder
             }
         }
+    }
+    lineTo(murmur:Murmur,name:string){
+        murmur.logicParents[name]=this;
+    }
+    getLine(name:string){
+        return this.logicParents[name];
     }
     static convert(obj, needReplace: Array<Murmur>): Murmur {
         if (obj.nodeName) {

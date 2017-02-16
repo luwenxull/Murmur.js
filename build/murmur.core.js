@@ -16,6 +16,7 @@ var Murmur = (function () {
         this.$ifDirective = { shouldReturn: true, spaceHolder: null };
         this._fields = {};
         this.refPromise = null;
+        this.logicParents = {};
         this.rendered = false;
         this.nodeName = tagName;
         this.attr = attr;
@@ -162,6 +163,12 @@ var Murmur = (function () {
                 return this.$ifDirective.spaceHolder;
             }
         }
+    };
+    Murmur.prototype.lineTo = function (murmur, name) {
+        murmur.logicParents[name] = this;
+    };
+    Murmur.prototype.getLine = function (name) {
+        return this.logicParents[name];
     };
     Murmur.convert = function (obj, needReplace) {
         if (obj.nodeName) {

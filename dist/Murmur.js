@@ -82,6 +82,8 @@
 	                    _this.doConvert(responseText, prepareObj, murmurPromise);
 	                }
 	            });
+	        } else {
+	            throw new Error('请传入正确的模板字符串或地址！');
 	        }
 	        return murmurPromise;
 	    };
@@ -133,6 +135,7 @@
 	        this.$ifDirective = { shouldReturn: true, spaceHolder: null };
 	        this._fields = {};
 	        this.refPromise = null;
+	        this.logicParents = {};
 	        this.rendered = false;
 	        this.nodeName = tagName;
 	        this.attr = attr;
@@ -282,6 +285,12 @@
 	                return this.$ifDirective.spaceHolder;
 	            }
 	        }
+	    };
+	    Murmur.prototype.lineTo = function (murmur, name) {
+	        murmur.logicParents[name] = this;
+	    };
+	    Murmur.prototype.getLine = function (name) {
+	        return this.logicParents[name];
 	    };
 	    Murmur.convert = function (obj, needReplace) {
 	        if (obj.nodeName) {
@@ -667,7 +676,8 @@
 	    "mm-repeat": { name: "mm-repeat", directive: "RepeatDirective" },
 	    "mm-if": { name: "mm-if", directive: "IfDirective" },
 	    "mm-ref": { name: 'mm-ref', directive: 'RefDirective' },
-	    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' }
+	    "mm-mount": { name: 'mm-mount', directive: 'MountDirective' },
+	    "mm-show": { name: "mm-show", directive: 'ShowDirective' }
 	};
 	var MurmurConnectTypes;
 	(function (MurmurConnectTypes) {
