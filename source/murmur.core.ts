@@ -186,7 +186,7 @@ export default class Murmur implements MurmurItf {
             let m: Murmur = new Murmur(nodeName, attr, children);
             for (let a of attr) {
                 if (a.name == 'mm-holder') {
-                    m.placeholder = a.value
+                    m.placeholder = a.value;
                     needReplace.push(m)
                 }
             }

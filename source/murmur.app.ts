@@ -1,9 +1,7 @@
 import Murmur from "./murmur.core"
-import { MurmurPromise } from "./murmur.promise"
-import { MurmurPromiseType } from "./murmur.type"
-import { wxParser } from "wx-parser"
-import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax, appendChild } from "./murmur.tool"
-
+import {MurmurPromise} from "./murmur.promise"
+import {wxParser} from "wx-parser"
+import {ajax} from "./murmur.tool"
 interface prepareItf {
     name: string,
     model?,
@@ -12,7 +10,9 @@ interface prepareItf {
 }
 
 export default class App {
-    constructor(public appManager: {} = {}) { }
+    constructor(public appManager: {} = {}) {
+    }
+
     prepare(prepareObj: prepareItf) {
         let murmurPromise: MurmurPromise;
         this.appManager[prepareObj.name] = murmurPromise = new MurmurPromise(prepareObj.template || prepareObj.templateUrl);
@@ -22,21 +22,22 @@ export default class App {
             ajax({
                 url: prepareObj.templateUrl,
                 success: responseText => {
-                    this.doConvert(responseText, prepareObj, murmurPromise)
+                    this.doConvert(responseText, prepareObj, murmurPromise);
                 }
             })
-        } else{
+        } else {
             throw new Error('请传入正确的模板字符串或地址！')
         }
         return murmurPromise
     }
+
     doConvert(template, prepareObj: prepareItf, murmurPromise: MurmurPromise) {
         let needReplace: Murmur[] = [];
         let murmurTree: Murmur = murmurPromise.murmur = Murmur.convert(wxParser.parseStart(template), needReplace);
         prepareObj.model && (murmurTree.model.state = prepareObj.model);
         if (needReplace.length) {
             for (let holderMurmur of needReplace) {
-                let substitution = this.getPromise(holderMurmur.placeholder)
+                let substitution = this.getPromise(holderMurmur.placeholder);
                 murmurPromise.depends(substitution);
                 holderMurmur.replace(substitution);
                 murmurPromise.checkDependencies();
@@ -44,8 +45,8 @@ export default class App {
         } else {
             murmurPromise.resolve();
         }
-        // murmurPromise.resolve(murmurTree);
     }
+
     getPromise(name) {
         return this.appManager[name]
     }
