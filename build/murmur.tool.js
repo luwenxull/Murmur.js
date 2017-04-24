@@ -1,10 +1,11 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_tools_ajax_1 = require("./murmur.tools.ajax");
-exports.ajax = murmur_tools_ajax_1.ajax;
+var rxjs_es_1 = require("rxjs-es");
 /**
  * 判断是否是简单值
  *
- * @param {any} val
+ * @param {} val
  * @returns
  */
 function isSimpleValue(val) {
@@ -26,7 +27,7 @@ exports.removeBraceOfValue = removeBraceOfValue;
  * 快速排序
  *
  * @param {Array} arr
- * @param {String} arr
+ * @param {String} sortField
  * @returns
  */
 function quickSort(arr, sortField) {
@@ -142,3 +143,21 @@ function appendChild(node, parent) {
     }
 }
 exports.appendChild = appendChild;
+/**
+ * 已统一的形式返回一个可观察对象
+ *
+ * @export
+ * @param {{ template?, templateUrl?}} config
+ * @returns
+ */
+function getTemplate(config) {
+    if (config.template) {
+        return rxjs_es_1.Observable.of(config.template);
+    }
+    else {
+        return murmur_tools_ajax_1.ajax({
+            url: config.templateUrl
+        });
+    }
+}
+exports.getTemplate = getTemplate;

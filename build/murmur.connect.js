@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_type_1 = require("./murmur.type");
 var Connect = (function () {
     function Connect(dom, type) {
@@ -13,5 +14,4 @@ var Connect = (function () {
     };
     return Connect;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Connect;

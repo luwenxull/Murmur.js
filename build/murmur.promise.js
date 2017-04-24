@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_type_1 = require("./murmur.type");
 var MurmurPromise = (function () {
     function MurmurPromise(name) {
@@ -15,7 +16,6 @@ var MurmurPromise = (function () {
         if (this.status === murmur_type_1.MurmurPromiseType.RESOLVED) {
             fn.call(this, this.murmur);
         }
-        ;
         return this;
     };
     MurmurPromise.prototype.resolve = function () {

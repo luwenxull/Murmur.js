@@ -1,6 +1,6 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_core_1 = require("./murmur.core");
-var murmur_promise_1 = require("./murmur.promise");
 var wx_parser_1 = require("wx-parser");
 var murmur_tool_1 = require("./murmur.tool");
 var App = (function () {
@@ -8,25 +8,32 @@ var App = (function () {
         if (appManager === void 0) { appManager = {}; }
         this.appManager = appManager;
     }
-    App.prototype.prepare = function (prepareObj) {
-        var _this = this;
+    App.prototype.config = function (config) {
         var murmurPromise;
-        this.appManager[prepareObj.name] = murmurPromise = new murmur_promise_1.MurmurPromise(prepareObj.template || prepareObj.templateUrl);
-        if (prepareObj.template) {
-            this.doConvert(prepareObj.template, prepareObj, murmurPromise);
-        }
-        else if (prepareObj.templateUrl) {
-            murmur_tool_1.ajax({
-                url: prepareObj.templateUrl,
-                success: function (responseText) {
-                    _this.doConvert(responseText, prepareObj, murmurPromise);
+        // this.appManager[config.name] = murmurPromise = new MurmurPromise(config.template || config.templateUrl);
+        // if (config.template) {
+        //     this.doConvert(config.template, config, murmurPromise)
+        // } else if (config.templateUrl) {
+        //     ajax({
+        //         url: config.templateUrl,
+        //         success: responseText => {
+        //             this.doConvert(responseText, config, murmurPromise);
+        //         }
+        //     })
+        // } else {
+        //     throw new Error('请传入正确的模板字符串或地址！')
+        // }
+        var observable = murmur_tool_1.getTemplate(config);
+        observable.subscribe({
+            next: function () {
+                var arg = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    arg[_i] = arguments[_i];
                 }
-            });
-        }
-        else {
-            throw new Error('请传入正确的模板字符串或地址！');
-        }
-        return murmurPromise;
+                console.log(arg);
+            }
+        });
+        // return murmurPromise
     };
     App.prototype.doConvert = function (template, prepareObj, murmurPromise) {
         var needReplace = [];
@@ -44,12 +51,10 @@ var App = (function () {
         else {
             murmurPromise.resolve();
         }
-        // murmurPromise.resolve(murmurTree);
     };
     App.prototype.getPromise = function (name) {
         return this.appManager[name];
     };
     return App;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = App;

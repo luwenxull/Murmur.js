@@ -1,20 +1,20 @@
-let Mpp = require('../Murmur').Mpp
+let Mpp = require('../Murmur').Mpp;
 let app=new Mpp();
 
-app.prepare({
+app.config({
     name:'author',
     template:'hello {author}'
-})
+});
 
-let footer=app.prepare({
+let footer=app.config({
     name:'footer',
     templateUrl: 'footer.html',
     model: {
         author: 'luwenxu'
     }
-})
+});
 
-let root = app.prepare({
+let root = app.config({
     name:'root',
     templateUrl: 'template.html',
     model: {
@@ -68,13 +68,13 @@ let root = app.prepare({
     }
 })
 
-root.then(function(){
-    console.log(root);
-})
-
-root.render('app',function(){
-    console.log('d');
-})
+// root.then(function(){
+//     console.log(root);
+// });
+//
+// root.render('app',function(){
+//     console.log('d');
+// });
 // console.log(root);
 console.log(app);
 

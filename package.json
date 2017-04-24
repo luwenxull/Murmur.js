@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/luwenxull/murmur#readme",
   "dependencies": {
+    "rxjs-es": "^5.0.0-beta.12",
     "wx-parser": "^1.5.0"
   },
   "scripts": {
@@ -32,7 +33,7 @@
   "devDependencies": {
     "babel-core": "^6.21.0",
     "babel-loader": "^6.2.10",
-    "webpack": "^1.14.0"
+    "webpack": "^2.4.1"
   },
   "optionalDependencies": {
     "hammerjs": "^2.0.8"

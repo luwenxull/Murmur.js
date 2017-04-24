@@ -1,6 +1,6 @@
 import MurmurCreatorFactory from "./murmur.creator"
 import MurmurField from "./murmur.field"
-import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, ajax, appendChild } from "./murmur.tool"
+import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, appendChild } from "./murmur.tool"
 import { MurmurDirectiveItf, RepeatDirective, MountDirective } from "./murmur.directive"
 import Connect from "./murmur.connect"
 import { wxParser } from "wx-parser"

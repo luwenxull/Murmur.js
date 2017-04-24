@@ -1,10 +1,9 @@
-import Murmur from "./murmur.core"
-import MurmurField from "./murmur.field"
-export { ajax } from "./murmur.tools.ajax"
+import { ajax } from "./murmur.tools.ajax"
+import { Observable } from "rxjs-es"
 /**
  * 判断是否是简单值
  * 
- * @param {any} val
+ * @param {} val
  * @returns
  */
 export function isSimpleValue(val) {
@@ -28,7 +27,7 @@ export function removeBraceOfValue(str: string): string {
  * 快速排序
  * 
  * @param {Array} arr
- * @param {String} arr
+ * @param {String} sortField
  * @returns
  */
 export function quickSort(arr, sortField = null) {
@@ -133,5 +132,23 @@ export function appendChild(node: Node | Node[], parent: Node) {
     }
     for (let child of childNodesArr) {
         parent.appendChild(child)
+    }
+}
+
+
+/**
+ * 已统一的形式返回一个可观察对象
+ * 
+ * @export
+ * @param {{ template?, templateUrl?}} config 
+ * @returns 
+ */
+export function getTemplate(config: { template?, templateUrl?}) {
+    if (config.template) {
+        return Observable.of(config.template)
+    } else {
+        return ajax({
+            url: config.templateUrl
+        })
     }
 }

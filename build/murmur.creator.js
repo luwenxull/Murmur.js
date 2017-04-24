@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_core_1 = require("./murmur.core");
 var tools = require("./murmur.tool");
 var murmur_type_1 = require("./murmur.type");
@@ -130,5 +131,4 @@ var MurmurCreatorFactory = (function () {
         return creatorInstance || (creatorInstance = new MurmurCreator());
     };
 })();
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MurmurCreatorFactory;

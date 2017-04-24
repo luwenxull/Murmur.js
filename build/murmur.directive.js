@@ -1,9 +1,15 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_core_1 = require("./murmur.core");
 var murmur_tool_1 = require("./murmur.tool");
 var MurmurDirective = (function () {
@@ -16,7 +22,7 @@ exports.MurmurDirective = MurmurDirective;
 var RepeatDirective = (function (_super) {
     __extends(RepeatDirective, _super);
     function RepeatDirective() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.murmurList = [];
         return _this;
     }
@@ -89,7 +95,7 @@ exports.RepeatDirective = RepeatDirective;
 var IfDirective = (function (_super) {
     __extends(IfDirective, _super);
     function IfDirective() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     IfDirective.prototype.compile = function (murmur, domGenerated) {
         var dExp = this.directiveExpression;
@@ -118,7 +124,7 @@ exports.IfDirective = IfDirective;
 var ShowDirective = (function (_super) {
     __extends(ShowDirective, _super);
     function ShowDirective() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     ShowDirective.prototype.compile = function (murmur, domGenerated) {
         var dExp = this.directiveExpression;
@@ -143,7 +149,7 @@ exports.ShowDirective = ShowDirective;
 var RefDirective = (function (_super) {
     __extends(RefDirective, _super);
     function RefDirective() {
-        return _super.apply(this, arguments) || this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     RefDirective.prototype.compile = function (murmur, domGenerated) {
         murmur.refClue = this.directiveExpression;
@@ -156,7 +162,7 @@ exports.RefDirective = RefDirective;
 var MountDirective = (function (_super) {
     __extends(MountDirective, _super);
     function MountDirective() {
-        var _this = _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.callbacks = [];
         return _this;
     }

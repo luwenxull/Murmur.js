@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_type_1 = require("./murmur.type");
 var MurmurField = (function () {
     function MurmurField(value, expression, type, unit) {
@@ -26,5 +27,4 @@ var MurmurField = (function () {
     };
     return MurmurField;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MurmurField;

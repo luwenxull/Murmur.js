@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var murmur_creator_1 = require("./murmur.creator");
 var murmur_field_1 = require("./murmur.field");
 var murmur_tool_1 = require("./murmur.tool");
@@ -196,5 +197,4 @@ var Murmur = (function () {
     };
     return Murmur;
 }());
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Murmur;

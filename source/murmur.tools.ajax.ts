@@ -1,6 +1,8 @@
+import {Observable} from "rxjs-es";
+
 function formatParams(data) {
-    var arr = [];
-    for (var name in data) {
+    let arr = [];
+    for (let name in data) {
         arr.push(encodeURIComponent(name) + "=" + encodeURIComponent(data[name]));
     }
     arr.push(("v=" + Math.random()).replace(".", ""));
@@ -16,29 +18,32 @@ interface optionItf {
     fail?: (statusCode) => void
 }
 export function ajax(options: optionItf) {
-    options.type = (options.type || "GET").toUpperCase();
-    options.dataType = options.dataType || "json";
-    let params = formatParams(options.data);
+    return Observable.create(observer=>{
+        options.type = (options.type || "GET").toUpperCase();
+        options.dataType = options.dataType || "json";
+        let params = formatParams(options.data);
 
-    let xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState == 4) {
-            var status = xhr.status;
-            if (status >= 200 && status < 300) {
-                let random = Math.random() * 5000;
-                options.success && options.success(xhr.responseText, xhr.responseXML);
-            } else {
-                options.fail && options.fail(status);
+        let xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                let status = xhr.status;
+                if (status >= 200 && status < 300) {
+                    // options.success && options.success(xhr.responseText, xhr.responseXML);
+                    observer.next(xhr.responseText,xhr.responseText)
+                } else {
+                    // options.fail && options.fail(status);
+                    observer.error()
+                }
             }
-        }
-    }
+        };
 
-    if (options.type == "POST") {
-        xhr.open("POST", options.url, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.send(params);
-    } else if (options.type == "GET") {
-        xhr.open("GET", options.url + "?" + params, true);
-        xhr.send(null);
-    }
+        if (options.type == "POST") {
+            xhr.open("POST", options.url, true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.send(params);
+        } else if (options.type == "GET") {
+            xhr.open("GET", options.url + "?" + params, true);
+            xhr.send(null);
+        }
+    })
 }
