@@ -1,11 +1,5 @@
-module.exports = {
-    entry: './Murmur.js',
-    output: {
-        filename: './dist/Murmur.js'
-    },
-    module: {
-        loaders: [{
-            test: /\.js$/,exclude: /node_modules/,loader: "babel-loader"
-        }]
-    }
+function buildConfig(env) {
+    return require('./webpack-component/component.' + env + '.js')(env)
 }
+
+module.exports = buildConfig;

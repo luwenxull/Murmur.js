@@ -1,6 +1,6 @@
-import Murmur from "./murmur.core"
-import { removeAllSpace, addSibling, appendChild } from "./murmur.tool"
-import Connect from "./murmur.connect"
+import Murmur from "./Murmur.core"
+import { removeAllSpace, addSibling, appendChild } from "./Murmur.tool"
+import Connect from "./Murmur.connect"
 
 export interface MurmurDirectiveItf {
     compile(murmur: Murmur, domGenerated: Node): Node

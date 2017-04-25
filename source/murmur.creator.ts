@@ -1,9 +1,9 @@
-import Murmur,{isMurmur} from "./murmur.core"
-import MurmurField from "./murmur.field"
-import * as tools from "./murmur.tool"
-import { MurmurFieldType, MurmurNodeType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./murmur.type"
-import * as MurmurDirectives from "./murmur.directive"
-import Connect from "./murmur.connect"
+import Murmur,{isMurmur} from "./Murmur.core"
+import MurmurField from "./Murmur.field"
+import * as tools from "./Murmur.tool"
+import { MurmurFieldType, MurmurNodeType, MurmurDirectiveTypes, MurmurConnectTypes, MurmurEventTypes } from "./Murmur.type"
+import * as MurmurDirectives from "./Murmur.directive"
+import Connect from "./Murmur.connect"
 
 class MurmurCreator {
     private extractValueRegexr: RegExp = /\{:{0,1}\w+\}/g

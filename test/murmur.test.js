@@ -1,20 +1,19 @@
-let Mpp = require('../Murmur').Mpp;
-let app=new Mpp();
-
-app.config({
+import App from "../source/Murmur.app"
+let app=new App();
+app.component({
     name:'author',
     template:'hello {author}'
 });
 
-let footer=app.config({
-    name:'footer',
+let footer=app.component({
+    name:'date-footer',
     templateUrl: 'footer.html',
     model: {
         author: 'luwenxu'
     }
 });
 
-let root = app.config({
+let root = app.component({
     name:'root',
     templateUrl: 'template.html',
     model: {
@@ -66,7 +65,7 @@ let root = app.config({
             // show: true
         }]
     }
-})
+});
 
 // root.then(function(){
 //     console.log(root);
@@ -76,7 +75,7 @@ let root = app.config({
 //     console.log('d');
 // });
 // console.log(root);
-console.log(app);
+// console.log(app);
 
 
 

@@ -1,5 +1,5 @@
-import { MurmurFieldType } from "./murmur.type"
-import Murmur from "./murmur.core"
+import { MurmurFieldType } from "./Murmur.type"
+import Murmur from "./Murmur.core"
 export default class MurmurField {
     constructor(public value: string, public expression: string, public type: number, public unit) { }
     dispatchSync(murmur: Murmur) {

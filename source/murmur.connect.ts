@@ -1,4 +1,4 @@
-import {MurmurConnectTypes} from "./murmur.type"
+import {MurmurConnectTypes} from "./Murmur.type"
 export default class Connect{
     constructor(public dom:Node|Comment,public type:string){}
     isSimpleDom(){

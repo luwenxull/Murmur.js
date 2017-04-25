@@ -1,4 +1,4 @@
-import { ajax } from "./murmur.tools.ajax"
+import { ajax } from "./Murmur.tools.ajax"
 import { Observable } from "rxjs-es"
 /**
  * 判断是否是简单值

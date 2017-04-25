@@ -1,11 +1,11 @@
-import MurmurCreatorFactory from "./murmur.creator"
-import MurmurField from "./murmur.field"
-import { isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, appendChild } from "./murmur.tool"
-import { MurmurDirectiveItf, RepeatDirective, MountDirective } from "./murmur.directive"
-import Connect from "./murmur.connect"
-import { wxParser } from "wx-parser"
-import { MurmurPromise } from "./murmur.promise"
-import { MurmurPromiseType } from "./murmur.type"
+import MurmurCreatorFactory from "./Murmur.creator"
+import MurmurField from "./Murmur.field"
+import {isNothing, removeAllSpace, removeBraceOfValue, removeFirstColon, appendChild} from "./Murmur.tool"
+import {MurmurDirectiveItf, RepeatDirective, MountDirective} from "./Murmur.directive"
+import Connect from "./Murmur.connect"
+import {wxParser} from "wx-parser"
+import {MurmurPromise} from "./Murmur.promise"
+import Component from "./Murmur.component";
 
 export interface MurmurItf {
     nodeName: string,
@@ -24,10 +24,14 @@ export default class Murmur implements MurmurItf {
     public nodeName: string;
     public attr: { name: string, value: string }[];
     public children: Array<Murmur | string>;
-    public model: { exotic, state } = { exotic: null, state: null };
+    public model: { exotic, state } = {exotic: null, state: null};
     public $directives: MurmurDirectiveItf[] = [];
-    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = { $repeatEntrance: true, $repeatEntity: false, repeatDInstance: null };
-    public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = { shouldReturn: true, spaceHolder: null };
+    public $repeatDirective: { $repeatEntrance: boolean, $repeatEntity: boolean, repeatDInstance: RepeatDirective } = {
+        $repeatEntrance: true,
+        $repeatEntity: false,
+        repeatDInstance: null
+    };
+    public $ifDirective: { shouldReturn: boolean, spaceHolder: Text } = {shouldReturn: true, spaceHolder: null};
     public $mountDirective: MountDirective;
     public _connected: Connect;
     public _fields: { [p: string]: MurmurField } = {};
@@ -35,15 +39,17 @@ export default class Murmur implements MurmurItf {
     public refClue: string;
     public placeholder: string;
     public refPromise: MurmurPromise = null;
-    public logicParents:{}={};
+    public logicParents: {} = {};
     private murmurID: number;
-    private rendered:boolean=false;
+    private rendered: boolean = false;
+
     constructor(tagName, attr, children) {
         this.nodeName = tagName;
         this.attr = attr;
         this.children = children;
         this.murmurID = murmurID++;
     }
+
     create(exotic = null): Connect {
         this.model.exotic = exotic;
         this._connected = MurmurCreatorFactory().create(this);
@@ -54,8 +60,9 @@ export default class Murmur implements MurmurItf {
         }
         return this._connected
     }
+
     render(loc: string, success?: (murmur: Murmur) => void) {
-        this.rendered=true;
+        this.rendered = true;
         this.create();
         let childNodes = (<Node>this.getNode()).childNodes;
         let root = document.getElementById(loc);
@@ -64,11 +71,13 @@ export default class Murmur implements MurmurItf {
             success.call(null, this)
         }
     }
+
     update(updateObj) {
         this.model.state = this.model.state || {};
         Object.assign(this.model.state, updateObj);
         this.dispatchUpdate(updateObj, Object.keys(updateObj));
     }
+
     dispatchUpdate(updateObj, keysNeedToBeUpdate) {
         if (this._connected.isSimpleDom()) {
             for (let $d of this.$directives) {
@@ -85,6 +94,7 @@ export default class Murmur implements MurmurItf {
             this.$repeatDirective.repeatDInstance.update(this, updateObj)
         }
     }
+
     doUpdate(updateObj, keysNeedToBeUpdate) {
         let fieldKeys = Object.keys(this._fields);
         for (let field of fieldKeys) {
@@ -93,6 +103,7 @@ export default class Murmur implements MurmurItf {
             }
         }
     }
+
     evalExpression(val: string, unit, fieldType): string {
         let copyVal = val;
         if (!isNothing(val)) {
@@ -108,6 +119,7 @@ export default class Murmur implements MurmurItf {
         }
         return copyVal
     }
+
     extract(field) {
         let model = this.combineModel(),
             exotic = this.model.exotic;
@@ -117,9 +129,11 @@ export default class Murmur implements MurmurItf {
             return model[field]
         }
     }
+
     combineModel() {
         return Object.assign({}, this.model.exotic || {}, this.model.state || {})
     }
+
     iterateChildren(ifBreak): Murmur {
         if (ifBreak(this)) {
             return this
@@ -141,16 +155,19 @@ export default class Murmur implements MurmurItf {
         }
         return result
     }
+
     ref(ref: string) {
         let fn = murmur => murmur.refClue === ref;
         let refMurmur = this.iterateChildren(fn);
         return refMurmur
     }
+
     holder(placeholder: string) {
         let fn = murmur => murmur.placeholder === placeholder;
         let refMurmur = this.iterateChildren(fn);
         return refMurmur
     }
+
     replace(murmurPromise: MurmurPromise) {
         // this.refPromise = murmurPromise
         murmurPromise.then((murmur) => {
@@ -158,6 +175,7 @@ export default class Murmur implements MurmurItf {
             // this.model.state=Object.assign(this.model.state||{},murmur.model.state||{});
         })
     }
+
     getNode(): Node | Node[] {
         if (this.$repeatDirective.repeatDInstance) {
             let nodeArray = [];
@@ -173,27 +191,32 @@ export default class Murmur implements MurmurItf {
             }
         }
     }
-    lineTo(murmur:Murmur,name:string){
-        murmur.logicParents[name]=this;
+
+    lineTo(murmur: Murmur, name: string) {
+        murmur.logicParents[name] = this;
     }
-    getLine(name:string){
+
+    getLine(name: string) {
         return this.logicParents[name];
     }
-    static convert(obj, needReplace: Array<Murmur>): Murmur {
-        if (obj.nodeName) {
-            let {nodeName, attr, children} = obj;
-            children = children.map(child => Murmur.convert(child, needReplace));
-            let m: Murmur = new Murmur(nodeName, attr, children);
-            for (let a of attr) {
-                if (a.name == 'mm-holder') {
-                    m.placeholder = a.value;
-                    needReplace.push(m)
-                }
-            }
-            return m
+
+    /**
+     * 将简单对象转换为Murmur实例
+     * @param simpleNodeDescription
+     * @param needReplace
+     * @returns {any}
+     */
+    static convert(simpleNodeDescription,component:Component): Murmur {
+        if (simpleNodeDescription.nodeName) {
+            let {nodeName, attr, children} = simpleNodeDescription;
+            console.log(nodeName);
+            children = children.map(child => Murmur.convert(child,component));//递归转化子节点
+            let murmur: Murmur = new Murmur(nodeName, attr, children);
+            return murmur
         }
-        return obj
+        return simpleNodeDescription
     }
+
     static clone<T extends MurmurItf>(murmur: T) {
         if (murmur.nodeName) {
             let {nodeName, attr, children} = murmur;

@@ -23,16 +23,16 @@
   "homepage": "https://github.com/luwenxull/murmur#readme",
   "dependencies": {
     "rxjs-es": "^5.0.0-beta.12",
+    "typescript": "^2.2.2",
     "wx-parser": "^1.5.0"
   },
   "scripts": {
-    "tsc": "tsc --outDir build -p source",
-    "test": "tsc --outDir build -p source && webpack --config webpack.test.config.js",
-    "build": "tsc --outDir build -p source && webpack --config webpack.config.js"
+    "build:dev": "./node_modules/.bin/webpack --env=dev --progress --colors -w"
   },
   "devDependencies": {
-    "babel-core": "^6.21.0",
-    "babel-loader": "^6.2.10",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "ts-loader": "^2.0.3",
     "webpack": "^2.4.1"
   },
   "optionalDependencies": {

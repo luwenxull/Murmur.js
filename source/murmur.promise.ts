@@ -1,5 +1,5 @@
-import Murmur from "./murmur.core"
-import { MurmurPromiseType } from "./murmur.type"
+import Murmur from "./Murmur.core"
+import { MurmurPromiseType } from "./Murmur.type"
 export class MurmurPromise {
     public success: Array<(murmur: Murmur) => void> = []
     public one:Array<(murmur: Murmur) => void>=[]

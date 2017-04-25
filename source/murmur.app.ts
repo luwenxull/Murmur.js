@@ -1,8 +1,7 @@
-import Murmur from "./murmur.core"
-import {MurmurPromise} from "./murmur.promise"
+import Murmur from "./Murmur.core"
 import {wxParser} from "wx-parser"
-import {getTemplate} from "./murmur.tool"
-// import {Observable} from "rxjs-es/Rx"
+import {getTemplate} from "./Murmur.tool"
+import Component from "./Murmur.component"
 interface configItf {
     name: string,
     model?,
@@ -14,49 +13,19 @@ export default class App {
     constructor(public appManager: {} = {}) {
     }
 
-    config(config: configItf) {
-        let murmurPromise: MurmurPromise;
-        // this.appManager[config.name] = murmurPromise = new MurmurPromise(config.template || config.templateUrl);
-        // if (config.template) {
-        //     this.doConvert(config.template, config, murmurPromise)
-        // } else if (config.templateUrl) {
-        //     ajax({
-        //         url: config.templateUrl,
-        //         success: responseText => {
-        //             this.doConvert(responseText, config, murmurPromise);
-        //         }
-        //     })
-        // } else {
-        //     throw new Error('请传入正确的模板字符串或地址！')
-        // }
-        let observable = getTemplate(config);
-        observable.subscribe({
-            next(template){
-                this.doConvert(template, config, observable)
+    component(config: configItf) {
+        let observableConfig = getTemplate(config);
+        observableConfig.subscribe({
+            next: template => {
+                this.compileComponent(template, config, observableConfig)
             }
         })
-
-        // return murmurPromise
     }
 
-    doConvert(template, prepareObj: configItf, murmurPromise: MurmurPromise) {
-        let needReplace: Murmur[] = [];
-        let murmurTree: Murmur = murmurPromise.murmur = Murmur.convert(wxParser.parseStart(template), needReplace);
-        prepareObj.model && (murmurTree.model.state = prepareObj.model);
-        if (needReplace.length) {
-            for (let holderMurmur of needReplace) {
-                let substitution = this.getPromise(holderMurmur.placeholder);
-                murmurPromise.depends(substitution);
-                holderMurmur.replace(substitution);
-                murmurPromise.checkDependencies();
-            }
-        } else {
-            murmurPromise.resolve();
-        }
-        
-    }
-
-    getPromise(name) {
-        return this.appManager[name]
+    compileComponent(template, config: configItf, observableConfig) {
+        let component = new Component(config.name);
+        let rootTree: Murmur = Murmur.convert(wxParser.parseStart(template),component);
+        // config.model && (rootTree.model.state = config.model);
+        component.setRootTree(rootTree)
     }
 }
